@@ -30,7 +30,7 @@ namespace SOAPWebServicesModern.Services
 
         public DataSet GetReport(ReportInput reportInput)
         {
-            // Using the same sample data regardless of report input for this example
+            // Using the same sample data regardless of report input
             return GetDataSet();
         }
     }

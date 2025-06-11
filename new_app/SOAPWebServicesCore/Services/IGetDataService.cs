@@ -5,38 +5,38 @@ using System.ServiceModel;
 namespace SOAPWebServicesCore.Services
 {
     /// <summary>
-    /// Service contract for data retrieval operations.
+    /// Interface for the SOAP web service that exposes data operations
     /// </summary>
     [ServiceContract(Namespace = "http://tempuri.org/")]
     public interface IGetDataService
     {
         /// <summary>
-        /// Returns a simple hello world message.
+        /// A simple hello world method
         /// </summary>
-        /// <returns>A hello world string.</returns>
+        /// <returns>A greeting string</returns>
         [OperationContract]
         string HelloWorld();
 
         /// <summary>
-        /// Gets data for the specified name.
+        /// Returns a personalized greeting
         /// </summary>
-        /// <param name="name">The name to get data for.</param>
-        /// <returns>Data associated with the provided name.</returns>
+        /// <param name="name">The name to personalize the greeting</param>
+        /// <returns>A personalized greeting string</returns>
         [OperationContract]
         string GetData(string name);
 
         /// <summary>
-        /// Retrieves a dataset containing various data elements.
+        /// Returns a sample dataset
         /// </summary>
-        /// <returns>A dataset with the requested information.</returns>
+        /// <returns>A dataset with sample data</returns>
         [OperationContract]
         DataSet GetDataSet();
 
         /// <summary>
-        /// Generates a report based on the provided input parameters.
+        /// Returns report data based on the provided report input
         /// </summary>
-        /// <param name="reportInput">The input parameters for the report generation, passed by reference.</param>
-        /// <returns>A dataset containing the generated report data.</returns>
+        /// <param name="reportInput">The report input parameters</param>
+        /// <returns>A dataset containing the report data</returns>
         [OperationContract]
         DataSet GetReport(ref ReportInput reportInput);
     }

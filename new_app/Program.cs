@@ -3,8 +3,13 @@ using CoreWCF.Configuration;
 using CoreWCF.Description;
 using SOAPWebServices.Core.Contracts;
 using SOAPWebServices.Core.Services;
+using SOAPWebServices.Core.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Create and initialize the ApplicationEvents instance
+ApplicationEvents applicationEvents = new ApplicationEvents();
+applicationEvents.OnApplicationStarting();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -48,6 +53,17 @@ app.UseRouting();
 app.UseCors();
 app.UseAuthorization();
 
+// Register application lifecycle events middleware
+app.Use(async (context, next) => {
+    try {
+        await next(context);
+    }
+    catch (Exception ex) {
+        applicationEvents.OnError(ex);
+        throw;
+    }
+});
+
 app.MapControllers();
 
 // Configure ServiceModel
@@ -62,5 +78,18 @@ app.UseServiceModel(serviceBuilder =>
     serviceMetadataBehavior.HttpGetEnabled = true;
     serviceMetadataBehavior.HttpGetUrl = new Uri("http://localhost:8080/GetDataService");
 });
+
+// Register application shutdown event
+AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
+    applicationEvents.OnApplicationStopping();
+};
+
+// Store the ApplicationEvents instance in the application services for access throughout the app
+app.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping.Register(() => {
+    applicationEvents.OnApplicationStopping();
+});
+
+// Make the ApplicationEvents instance available through DI
+builder.Services.AddSingleton(applicationEvents);
 
 app.Run();

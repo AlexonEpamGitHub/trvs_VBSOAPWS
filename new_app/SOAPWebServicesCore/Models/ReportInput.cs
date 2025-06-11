@@ -1,7 +1,8 @@
 namespace SOAPWebServicesCore.Models
 {
     /// <summary>
-    /// Represents the input parameters for report generation.
+    /// Report input model that provides input parameters for report generation.
+    /// Converted from the legacy VB.NET cReportInput class.
     /// </summary>
     public class ReportInput
     {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Runtime;
 
 namespace SOAPWebServices.Core.Infrastructure
 {

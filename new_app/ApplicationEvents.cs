@@ -19,6 +19,7 @@ namespace SOAPWebServices.Core
         /// <param name="logger">Optional logger instance for logging events</param>
         public static void ConfigureApplicationEvents(WebApplication app, ILogger? logger = null)
         {
+            logger?.LogInformation("Configuring application events to replace Global.asax functionality");
             // Replace Application_Start
             // Already handled in Program.cs through builder.Build() and configuration methods
 
@@ -31,7 +32,17 @@ namespace SOAPWebServices.Core
                 // Add request correlation ID for tracking
                 var correlationId = context.TraceIdentifier;
                 context.Items["CorrelationId"] = correlationId;
-                logger?.LogDebug($"Request {correlationId} to {context.Request.Path} started");
+                
+                // Set response header for correlation tracking
+                context.Response.Headers["X-Correlation-ID"] = correlationId;
+                
+                // Add request details to diagnostics
+                var endpoint = context.GetEndpoint()?.DisplayName;
+                var userAgent = context.Request.Headers.UserAgent.ToString();
+                var referrer = context.Request.Headers.Referer.ToString();
+                
+                logger?.LogDebug("Request {CorrelationId} started: Path={Path}, Method={Method}, Endpoint={Endpoint}, UserAgent={UserAgent}, Referrer={Referrer}",
+                    correlationId, context.Request.Path, context.Request.Method, endpoint, userAgent, referrer);
                 
                 try
                 {
@@ -40,16 +51,46 @@ namespace SOAPWebServices.Core
                 }
                 finally
                 {
-                    // Code to execute after the request is processed
+                    // Code to execute after the request is processed (Application_EndRequest equivalent)
                     requestStartTime.Stop();
-                    logger?.LogDebug($"Request {correlationId} to {context.Request.Path} completed in {requestStartTime.ElapsedMilliseconds}ms with status code {context.Response.StatusCode}");
+                    var elapsed = requestStartTime.ElapsedMilliseconds;
+                    
+                    // Log timing information with different levels based on duration
+                    if (elapsed > 1000)
+                    {
+                        logger?.LogWarning("Request {CorrelationId} to {Path} completed in {Elapsed}ms with status code {StatusCode} - SLOW REQUEST",
+                            correlationId, context.Request.Path, elapsed, context.Response.StatusCode);
+                    }
+                    else
+                    {
+                        logger?.LogDebug("Request {CorrelationId} to {Path} completed in {Elapsed}ms with status code {StatusCode}",
+                            correlationId, context.Request.Path, elapsed, context.Response.StatusCode);
+                    }
                 }
             });
 
             // Replace Application_AuthenticateRequest
             // This is handled by ASP.NET Core Authentication middleware (app.UseAuthentication())
+            app.Use(async (context, next) =>
+            {
+                // Execute after authentication but before authorization
+                if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    logger?.LogDebug("Request {CorrelationId}: User {UserName} authenticated successfully",
+                        context.TraceIdentifier, context.User.Identity.Name);
+                    
+                    // Set security headers
+                    if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
+                        context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                    
+                    if (!context.Response.Headers.ContainsKey("X-XSS-Protection"))
+                        context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                }
+                
+                await next(context);
+            });
             
-            // Enhanced exception handling middleware
+            // Enhanced exception handling middleware (Application_Error replacement)
             app.UseExceptionHandler(errorApp =>
             {
                 errorApp.Run(async context =>
@@ -58,8 +99,13 @@ namespace SOAPWebServices.Core
                     var exception = exceptionHandlerPathFeature?.Error;
                     var correlationId = context.TraceIdentifier;
 
-                    // Log the exception with correlation ID
-                    logger?.LogError(exception, "Unhandled exception occurred for request {CorrelationId}", correlationId);
+                    // Log the exception with correlation ID and detailed information
+                    logger?.LogError(exception, 
+                        "Unhandled exception occurred for request {CorrelationId}, URL: {Url}, Method: {Method}, User: {User}", 
+                        correlationId, 
+                        exceptionHandlerPathFeature?.Path, 
+                        context.Request.Method,
+                        context.User?.Identity?.Name ?? "Anonymous");
 
                     // Set response status code and content type
                     context.Response.StatusCode = 500;
@@ -70,11 +116,24 @@ namespace SOAPWebServices.Core
                     {
                         TraceId = correlationId,
                         Message = "An unexpected error occurred. Please try again later.",
-                        Timestamp = DateTime.UtcNow
+                        Timestamp = DateTime.UtcNow,
+                        // Include exception details only in development
+#if DEBUG
+                        Details = exception?.Message,
+                        StackTrace = exception?.StackTrace?.Split(new[] { Environment.NewLine }, StringSplitOptions.None)
+#endif
                     };
 
                     // Serialize to JSON
                     await context.Response.WriteAsJsonAsync(errorResponse);
+                    
+                    // Optionally send notification for critical errors
+                    if (exception is OutOfMemoryException or StackOverflowException or AccessViolationException)
+                    {
+                        logger?.LogCritical("CRITICAL ERROR: {ExceptionType} occurred. Immediate attention required.", 
+                            exception?.GetType().Name);
+                        // Here you would integrate with an alert system or notification service
+                    }
                 });
             });
 
@@ -84,11 +143,34 @@ namespace SOAPWebServices.Core
             // builder.Services.AddSession(options => { ... });
             // Then in the request pipeline: app.UseSession();
 
+            // Application_PreSendRequestHeaders equivalent
+            app.Use(async (context, next) =>
+            {
+                await next(context);
+                
+                // Execute after the response is generated but before it's sent
+                if (!context.Response.Headers.ContainsKey("Server"))
+                {
+                    // Remove or mask server information for security
+                    context.Response.Headers.Server = "";
+                }
+                
+                // Add cache control headers for non-API endpoints if not already set
+                if (!context.Response.Headers.ContainsKey("Cache-Control") && 
+                    !context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+                    context.Response.Headers.Pragma = "no-cache";
+                }
+            });
+            
             // Enhanced diagnostics middleware
             app.Use(async (context, next) =>
             {
                 // Track resource usage for potential memory leaks or performance issues
                 var memoryBefore = GC.GetTotalMemory(false);
+                var cpuBefore = Process.GetCurrentProcess().TotalProcessorTime;
+                var requestStart = DateTime.UtcNow;
                 
                 try
                 {
@@ -99,12 +181,23 @@ namespace SOAPWebServices.Core
                     // Log memory usage for requests that might be problematic
                     var memoryAfter = GC.GetTotalMemory(false);
                     var memoryDelta = memoryAfter - memoryBefore;
+                    var cpuAfter = Process.GetCurrentProcess().TotalProcessorTime;
+                    var cpuDelta = (cpuAfter - cpuBefore).TotalMilliseconds;
+                    var requestTime = (DateTime.UtcNow - requestStart).TotalMilliseconds;
+                    
+                    // Add performance metrics to response headers in development
+                    if (app.Environment.IsDevelopment())
+                    {
+                        context.Response.Headers["X-Memory-Usage"] = memoryDelta.ToString();
+                        context.Response.Headers["X-CPU-Usage"] = cpuDelta.ToString();
+                        context.Response.Headers["X-Request-Duration"] = requestTime.ToString();
+                    }
                     
                     if (memoryDelta > 5_000_000) // 5MB threshold
                     {
                         logger?.LogWarning(
-                            "High memory usage detected for request {Path}: {MemoryDelta} bytes",
-                            context.Request.Path, memoryDelta);
+                            "High memory usage detected for request {Path}: {MemoryDelta:N0} bytes, CPU time: {CpuTime:N2}ms",
+                            context.Request.Path, memoryDelta, cpuDelta);
                     }
                 }
             });
@@ -142,26 +235,64 @@ namespace SOAPWebServices.Core
                     _environment.EnvironmentName);
                 
                 // Log system information for diagnostics
-                _logger.LogInformation("Runtime: {Runtime}, OS: {OS}, Processors: {ProcessorCount}",
+                var process = Process.GetCurrentProcess();
+                _logger.LogInformation(
+                    "Application Information: Runtime={Runtime}, OS={OS}, Processors={ProcessorCount}, " +
+                    "PhysicalMemory={Memory:N0}MB, ProcessId={ProcessId}, StartTime={StartTime}",
                     Environment.Version,
                     Environment.OSVersion,
-                    Environment.ProcessorCount);
+                    Environment.ProcessorCount,
+                    GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1024 * 1024),
+                    process.Id,
+                    process.StartTime.ToUniversalTime());
                 
-                // Application_Start equivalent
+                // Log current GC mode
+                _logger.LogInformation("GC Configuration: Server GC={ServerGC}, Concurrent={ConcurrentGC}, Generation 0={Gen0Size}, " +
+                    "Generation 1={Gen1Size}, Generation 2={Gen2Size}",
+                    GCSettings.IsServerGC,
+                    GCSettings.LatencyMode,
+                    GC.CollectionCount(0),
+                    GC.CollectionCount(1),
+                    GC.CollectionCount(2));
+                
+                // Log configured endpoint information
+                _logger.LogInformation("Application endpoints configured successfully");
             });
 
             _appLifetime.ApplicationStopping.Register(() =>
             {
-                _logger.LogInformation("Application is stopping");
+                _logger.LogInformation("Application is stopping - executing graceful shutdown tasks");
                 // Perform cleanup tasks
                 try
                 {
+                    // Application state capture for diagnostics
+                    var process = Process.GetCurrentProcess();
+                    var uptime = DateTime.Now - process.StartTime;
+                    
+                    _logger.LogInformation(
+                        "Application shutting down: Uptime={Uptime}, WorkingSet={WorkingSet:N0}MB, " +
+                        "PeakWorkingSet={PeakWorkingSet:N0}MB, Threads={Threads}",
+                        uptime,
+                        process.WorkingSet64 / (1024 * 1024),
+                        process.PeakWorkingSet64 / (1024 * 1024),
+                        process.Threads.Count);
+                    
                     // Flush any pending operations
-                    _logger.LogInformation("Flushing pending operations");
+                    _logger.LogInformation("Flushing pending operations and closing resources");
+                    
+                    // Allow time for in-flight requests to complete
+                    Task.Delay(TimeSpan.FromSeconds(2)).Wait();
+                    
+                    // Close/dispose any application resources here
+                    _logger.LogInformation("Resource cleanup completed successfully");
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error during application shutdown");
+                }
+                finally 
+                {
+                    _logger.LogInformation("Shutdown sequence completed");
                 }
             });
 

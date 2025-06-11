@@ -9,7 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Create and initialize the ApplicationEvents instance
 ApplicationEvents applicationEvents = new ApplicationEvents();
-applicationEvents.OnApplicationStarting();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -38,7 +37,13 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(8080);
 });
 
+// Make the ApplicationEvents instance available through DI
+builder.Services.AddSingleton(applicationEvents);
+
 var app = builder.Build();
+
+// Call OnApplicationStarting after the app is built but before it starts
+applicationEvents.OnApplicationStarting();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -79,17 +84,23 @@ app.UseServiceModel(serviceBuilder =>
     serviceMetadataBehavior.HttpGetUrl = new Uri("http://localhost:8080/GetDataService");
 });
 
-// Register application shutdown event
-AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
-    applicationEvents.OnApplicationStopping();
-};
+// Register application lifecycle events with the host lifetime
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStarted.Register(() => {
+    applicationEvents.OnApplicationStarted();
+});
 
-// Store the ApplicationEvents instance in the application services for access throughout the app
-app.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping.Register(() => {
+lifetime.ApplicationStopping.Register(() => {
     applicationEvents.OnApplicationStopping();
 });
 
-// Make the ApplicationEvents instance available through DI
-builder.Services.AddSingleton(applicationEvents);
+lifetime.ApplicationStopped.Register(() => {
+    applicationEvents.OnApplicationStopped();
+});
+
+// Register application shutdown event for non-graceful shutdowns
+AppDomain.CurrentDomain.ProcessExit += (sender, e) => {
+    applicationEvents.OnApplicationStopping();
+};
 
 app.Run();

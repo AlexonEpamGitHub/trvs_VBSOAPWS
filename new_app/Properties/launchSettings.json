@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "SOAPWebServices.Core": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "GetDataService",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:8080"
+    }
+  }
+}

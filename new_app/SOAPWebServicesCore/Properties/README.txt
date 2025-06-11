@@ -1,0 +1,1 @@
+This directory contains project properties and settings files for the SOAPWebServicesCore project.

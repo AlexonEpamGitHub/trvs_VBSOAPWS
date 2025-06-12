@@ -1,0 +1,30 @@
+{
+  "profiles": {
+    "SOAPWebServicesSimpleCore": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "GetDataService.asmx",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:57114"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "GetDataService.asmx",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": true,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:57114",
+      "sslPort": 0
+    }
+  }
+}

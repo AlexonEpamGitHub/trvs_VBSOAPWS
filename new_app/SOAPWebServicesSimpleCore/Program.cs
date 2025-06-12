@@ -8,18 +8,10 @@ using Microsoft.AspNetCore.Server.IISIntegration;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Add SOAP service
 builder.Services.AddSingleton<IDataService, DataService>();
 builder.Services.AddSoapCore();
 
-// Add authentication
-builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
-builder.Services.AddAuthorization();
-
-// Add session
+// Add session similar to the legacy app
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(20);
@@ -27,45 +19,29 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Add logging
-builder.Services.AddLogging(logging =>
-{
-    logging.AddConsole();
-    logging.AddDebug();
-});
+// Add authentication similar to the legacy Windows auth
+builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme);
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Add global exception handling (replacing customErrors mode="RemoteOnly")
+if (!app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseExceptionHandler("/Error");
 }
 
-app.UseExceptionHandlingMiddleware();
-app.UseHttpsRedirection();
+// Replace legacy pipeline with modern middleware
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 
-// Configure globalization
+// Configure request encoding (replacing globalization settings)
 app.UseRequestLocalization();
 
-// Map SOAP endpoints
+// Map SOAP endpoint to match the legacy .asmx path
 app.UseSoapEndpoint<IDataService>("/GetDataService.asmx", new SoapEncoderOptions(), 
     SoapSerializer.DataContractSerializer);
-
-// Optional: Add XML documentation endpoint to match .vsdisco behavior
-app.MapGet("/GetDataService.asmx", async (HttpContext context) =>
-{
-    context.Response.ContentType = "text/xml";
-    await context.Response.WriteAsync(@"<?xml version=""1.0"" encoding=""utf-8""?>
-<wsdl:definitions xmlns:soap=""http://schemas.xmlsoap.org/wsdl/soap/"" 
-                 xmlns:tns=""http://tempuri.org/"" 
-                 targetNamespace=""http://tempuri.org/"">
-  <!-- Service documentation would go here -->
-</wsdl:definitions>");
-});
 
 app.Run();

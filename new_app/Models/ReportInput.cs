@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace SOAPWebServicesCore.Models
 {
@@ -8,6 +9,7 @@ namespace SOAPWebServicesCore.Models
     /// and provides proper SOAP serialization support.
     /// </summary>
     [DataContract(Namespace = "http://tempuri.org/")]
+    [XmlRoot("cReportInput", Namespace = "http://tempuri.org/")]
     public class ReportInput
     {
         /// <summary>
@@ -19,6 +21,7 @@ namespace SOAPWebServicesCore.Models
         /// A string representing the report name. Default value is an empty string.
         /// </value>
         [DataMember]
+        [XmlElement("ReportName")]
         public string ReportName { get; set; } = string.Empty;
     }
 }

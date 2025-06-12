@@ -482,7 +482,7 @@ namespace SOAPWebService.Services
         {
             await Task.Delay(TimeSpan.FromMilliseconds(5), cancellationToken);
             
-            return new Rearbetadata
+            return new ReportMetadata
             {
                 ReportType = reportInput.ReportName?.ToLowerInvariant() switch
                 {

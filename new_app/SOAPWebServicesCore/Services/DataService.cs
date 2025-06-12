@@ -1,5 +1,7 @@
 namespace SOAPWebServicesCore.Services;
 
+using SOAPWebServicesCore.Models;
+
 public class DataService : IDataService
 {
     public string HelloWorld()
@@ -12,9 +14,9 @@ public class DataService : IDataService
         return $"Hello {name}, this is a simple SOAP web service response.";
     }
 
-    public DataSet GetDataSet()
+    public CustomDataSet GetDataSet()
     {
-        var ds = new DataSet { Name = "SampleDataSet" };
+        var ds = new CustomDataSet { Name = "SampleDataSet" };
         var dt = new DataTable { Name = "SampleTable" };
         
         // Add columns
@@ -29,7 +31,7 @@ public class DataService : IDataService
         return ds;
     }
 
-    public DataSet GetReport(ReportInput reportInput)
+    public CustomDataSet GetReport(ReportInput reportInput)
     {
         // Just return the same dataset as GetDataSet for this example
         return GetDataSet();

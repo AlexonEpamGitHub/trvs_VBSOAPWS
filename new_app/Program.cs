@@ -2,48 +2,46 @@ using SoapCore;
 using SOAPWebServicesCore.Services;
 using System.ServiceModel;
 
+// Create .NET 8 minimal hosting model application builder
+// This replaces the traditional Global.asax.vb Application_Start event handling
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container - replaces Global.asax.vb Application_Start functionality
+// Register dependency injection services - replaces Global.asax.vb service initialization
+// Configure IDataService and DataService as singletons for SOAP operations
 builder.Services.AddSingleton<IDataService, DataService>();
 builder.Services.AddSingleton<DataService>();
 
-// Add SoapCore services for SOAP functionality
+// Add SoapCore services to enable SOAP functionality in .NET 8
+// This provides the infrastructure needed to replace legacy ASMX web services
 builder.Services.AddSoapCore();
 
-// Configure logging (replaces legacy logging patterns from Global.asax.vb)
+// Configure logging system (replaces legacy logging patterns from Global.asax.vb)
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
-// Build the application
+// Build the web application instance
 var app = builder.Build();
 
-// Configure the HTTP request pipeline - replaces Global.asax.vb Application_BeginRequest/EndRequest patterns
+// Configure HTTP request pipeline - replaces Global.asax.vb Application_BeginRequest/EndRequest patterns
+// Enable developer exception page for development environment debugging
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
-// Add error handling middleware (replaces Global.asax.vb Application_Error)
-app.UseExceptionHandler("/error");
-
-// Configure SOAP endpoint to maintain compatibility with legacy ASMX endpoint
-// This replaces the traditional ASMX web service registration from Global.asax.vb
+// Configure SOAP endpoint to maintain compatibility with legacy ASMX web service
+// This endpoint replaces the traditional .asmx file and Global.asax.vb service registration
+// Uses XmlSerializer for backward compatibility with existing SOAP clients
 app.UseSoapEndpoint<IDataService>(
     "/DataService.asmx", 
     new SoapEncoderOptions(), 
     SoapSerializer.XmlSerializer);
 
-// Add a root endpoint that returns information about the service
-// This provides service discovery functionality that was typically handled in legacy applications
+// Add root endpoint that provides service discovery information
+// This replaces functionality that was typically handled in legacy Global.asax.vb applications
 app.MapGet("/", () => "SOAP Web Service is running. Access the service at /DataService.asmx");
 
-// Add health check endpoint for monitoring (modern replacement for legacy application monitoring)
-app.MapGet("/health", () => "Healthy");
-
-// Add error handling endpoint
-app.MapGet("/error", () => "An error occurred while processing your request.");
-
 // Start the application - replaces Global.asax.vb application lifecycle management
+// This is the main entry point that keeps the service running
 app.Run();

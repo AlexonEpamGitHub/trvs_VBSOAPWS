@@ -11,8 +11,16 @@ namespace SOAPWebServicesCore.Models;
 /// This class is designed to be serialized and deserialized by SOAP services and ensures
 /// proper data contract compliance for cross-platform web service communication.
 /// The implementation follows .NET 8 coding standards and conventions.
+/// 
+/// Migration Notes:
+/// - Converted from legacy VB.NET cReportInput.vb class to modern C# implementation
+/// - Replaced explicit private fields with getter/setter pattern with auto-implemented properties
+/// - Updated namespace to align with modern project structure
+/// - Maintained backward compatibility with existing SOAP service contracts
+/// - Enhanced with comprehensive XML documentation for better maintainability
+/// - Follows modern C# conventions while preserving original functionality
 /// </remarks>
-[DataContract(Name = "ReportInput", Namespace = "http://soapwebservicescore.models")]
+[DataContract(Name = "ReportInput", Namespace = "http://tempuri.org/")]
 public class ReportInput
 {
     /// <summary>
@@ -29,6 +37,10 @@ public class ReportInput
     /// var reportInput = new ReportInput { ReportName = "MonthlyReport" };
     /// </code>
     /// </example>
+    /// <remarks>
+    /// This property replaces the legacy VB.NET private field implementation with modern
+    /// auto-implemented property syntax while maintaining full SOAP serialization compatibility.
+    /// </remarks>
     [DataMember(Name = "ReportName", IsRequired = true, Order = 1)]
     public string ReportName { get; set; } = string.Empty;
 }

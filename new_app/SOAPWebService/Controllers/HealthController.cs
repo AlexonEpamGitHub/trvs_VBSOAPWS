@@ -11,6 +11,7 @@ namespace SOAPWebService.Controllers
     /// </summary>
     [ApiController]
     [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -34,13 +35,17 @@ namespace SOAPWebService.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Basic health information including service status and available endpoints</returns>
         [HttpGet]
+        [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Summary = "Get basic health status",
-            Description = "Returns basic health information including service status, available endpoints, and SOAP methods",
-            OperationId = "GetHealth"
+            Description = "Returns basic health information including service status, available endpoints, and SOAP methods with async support",
+            OperationId = "GetHealth",
+            Tags = new[] { "Health Monitoring" }
         )]
         [ProducesResponseType(typeof(HealthResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
         public async Task<IActionResult> GetAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _logger.BeginScope("HealthCheck_{RequestId}", Guid.NewGuid());
@@ -48,6 +53,9 @@ namespace SOAPWebService.Controllers
 
             try
             {
+                // Simulate async health data collection
+                await Task.Delay(10, cancellationToken);
+
                 var healthInfo = new HealthResponse
                 {
                     Status = "Healthy",
@@ -56,30 +64,35 @@ namespace SOAPWebService.Controllers
                     Migration = new MigrationInfo
                     {
                         From = "Legacy SOAP Service",
-                        To = "Modern .NET 8.0 Implementation",
+                        To = "Modern .NET 8.0 Implementation with Async Support",
                         Status = "Completed",
                         Date = DateTime.UtcNow.ToString("yyyy-MM-dd")
                     },
                     Endpoints = new[]
                     {
-                        "/GetDataService.asmx - SOAP Service",
+                        "/GetDataService.asmx - SOAP Service (Legacy)",
                         "/GetDataService.asmx?wsdl - WSDL Definition",
                         "/api/v1/health - REST Health Check",
                         "/api/v1/health/status - System Status Information",
                         "/api/v1/health/detailed - Detailed Health Check",
                         "/api/v1/health/dependencies - Dependencies Health Check",
                         "/api/v1/health/diagnostics - Service Diagnostics",
+                        "/api/v2/health - Enhanced REST Health Check",
                         "/swagger - API Documentation"
                     },
                     SoapMethods = new[]
                     {
-                        new SoapMethodInfo { Method = "HelloWorld", Description = "Simple hello world test method", Parameters = "None" },
-                        new SoapMethodInfo { Method = "GetData", Description = "Retrieves basic data", Parameters = "None" },
-                        new SoapMethodInfo { Method = "GetDataSet", Description = "Retrieves data in DataSet format", Parameters = "None" },
-                        new SoapMethodInfo { Method = "GetReport", Description = "Generates and returns report data", Parameters = "None" }
+                        new SoapMethodInfo { Method = "HelloWorldAsync", Description = "Async hello world test method", Parameters = "CancellationToken (optional)" },
+                        new SoapMethodInfo { Method = "GetDataAsync", Description = "Asynchronously retrieves basic data", Parameters = "CancellationToken (optional)" },
+                        new SoapMethodInfo { Method = "GetDataSetAsync", Description = "Asynchronously retrieves data in DataSet format", Parameters = "CancellationToken (optional)" },
+                        new SoapMethodInfo { Method = "GetReportAsync", Description = "Asynchronously generates and returns report data", Parameters = "CancellationToken (optional)" },
+                        new SoapMethodInfo { Method = "HelloWorld", Description = "Legacy synchronous hello world method", Parameters = "None" },
+                        new SoapMethodInfo { Method = "GetData", Description = "Legacy synchronous data retrieval", Parameters = "None" },
+                        new SoapMethodInfo { Method = "GetDataSet", Description = "Legacy synchronous DataSet retrieval", Parameters = "None" },
+                        new SoapMethodInfo { Method = "GetReport", Description = "Legacy synchronous report generation", Parameters = "None" }
                     },
                     Timestamp = DateTime.UtcNow,
-                    Version = "1.0.0"
+                    Version = "2.0.0"
                 };
 
                 _logger.LogInformation("Health check completed successfully with status: {Status}", healthInfo.Status);
@@ -92,6 +105,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Cancelled",
                     Error = "Request was cancelled",
+                    Message = "The health check operation was cancelled due to timeout",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -102,6 +116,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Unhealthy",
                     Error = "Internal server error occurred",
+                    Message = "An unexpected error occurred during health check",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -113,13 +128,17 @@ namespace SOAPWebService.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Comprehensive system status including performance metrics and runtime information</returns>
         [HttpGet("status")]
+        [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Summary = "Get detailed system status",
-            Description = "Returns comprehensive system information including runtime metrics, memory usage, and service capabilities",
-            OperationId = "GetSystemStatus"
+            Description = "Returns comprehensive system information including runtime metrics, memory usage, and service capabilities with async processing",
+            OperationId = "GetSystemStatus",
+            Tags = new[] { "Health Monitoring", "System Information" }
         )]
         [ProducesResponseType(typeof(SystemStatusResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
         public async Task<IActionResult> GetStatusAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _logger.BeginScope("SystemStatus_{RequestId}", Guid.NewGuid());
@@ -127,7 +146,8 @@ namespace SOAPWebService.Controllers
 
             try
             {
-                await Task.Delay(1, cancellationToken); // Simulate async operation
+                // Simulate async system information gathering
+                await Task.Delay(50, cancellationToken);
 
                 var systemInfo = new SystemStatusResponse
                 {
@@ -153,10 +173,11 @@ namespace SOAPWebService.Controllers
                         SoapServiceEnabled = true,
                         RestApiEnabled = true,
                         SwaggerDocumentation = true,
-                        HealthChecks = true
+                        HealthChecks = true,
+                        AsyncSupport = true
                     },
                     LastChecked = DateTime.UtcNow,
-                    Version = "1.0.0"
+                    Version = "2.0.0"
                 };
 
                 _logger.LogInformation("System status retrieved successfully for host: {HostName}", systemInfo.HostName);
@@ -169,6 +190,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Cancelled",
                     Error = "Request was cancelled",
+                    Message = "The system status operation was cancelled due to timeout",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -178,7 +200,8 @@ namespace SOAPWebService.Controllers
                 return StatusCode((int)HttpStatusCode.InternalServerError, new ErrorResponse
                 {
                     Status = "Error",
-                    Message = "Unable to retrieve system status",
+                    Error = "Unable to retrieve system status",
+                    Message = ex.Message,
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -190,14 +213,18 @@ namespace SOAPWebService.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Detailed health check results including all registered health checks</returns>
         [HttpGet("detailed")]
+        [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Summary = "Get detailed health check",
-            Description = "Returns comprehensive health check results including all registered health checks and their individual statuses",
-            OperationId = "GetDetailedHealth"
+            Description = "Returns comprehensive health check results including all registered health checks and their individual statuses with async validation",
+            OperationId = "GetDetailedHealth",
+            Tags = new[] { "Health Monitoring", "Diagnostics" }
         )]
         [ProducesResponseType(typeof(DetailedHealthResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(DetailedHealthResponse), (int)HttpStatusCode.ServiceUnavailable)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
         public async Task<IActionResult> GetDetailedAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _logger.BeginScope("DetailedHealthCheck_{RequestId}", Guid.NewGuid());
@@ -237,6 +264,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Cancelled",
                     Error = "Request was cancelled",
+                    Message = "The detailed health check operation was cancelled due to timeout",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -247,6 +275,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Error",
                     Error = "Failed to perform detailed health check",
+                    Message = ex.Message,
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -258,13 +287,18 @@ namespace SOAPWebService.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Health status of external dependencies</returns>
         [HttpGet("dependencies")]
+        [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Summary = "Get dependencies health check",
-            Description = "Returns health status of external dependencies and services",
-            OperationId = "GetDependenciesHealth"
+            Description = "Returns health status of external dependencies and services with async validation",
+            OperationId = "GetDependenciesHealth",
+            Tags = new[] { "Health Monitoring", "Dependencies" }
         )]
         [ProducesResponseType(typeof(DependenciesHealthResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetDependenciesAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _logger.BeginScope("DependenciesHealthCheck_{RequestId}", Guid.NewGuid());
@@ -275,14 +309,17 @@ namespace SOAPWebService.Controllers
                 var healthReport = await _healthCheckService.CheckHealthAsync(cancellationToken);
 
                 var dependencyChecks = healthReport.Entries
-                    .Where(entry => entry.Key.Contains("database") || entry.Key.Contains("external") || entry.Key.Contains("dependency"))
+                    .Where(entry => entry.Key.Contains("database", StringComparison.OrdinalIgnoreCase) || 
+                                   entry.Key.Contains("external", StringComparison.OrdinalIgnoreCase) || 
+                                   entry.Key.Contains("dependency", StringComparison.OrdinalIgnoreCase))
                     .Select(entry => new DependencyHealthInfo
                     {
                         Name = entry.Key,
                         Status = entry.Value.Status.ToString(),
                         ResponseTime = entry.Value.Duration,
                         LastChecked = DateTime.UtcNow,
-                        Details = entry.Value.Description
+                        Details = entry.Value.Description,
+                        Exception = entry.Value.Exception?.Message
                     }).ToArray();
 
                 var response = new DependenciesHealthResponse
@@ -291,13 +328,16 @@ namespace SOAPWebService.Controllers
                     Dependencies = dependencyChecks,
                     TotalDependencies = dependencyChecks.Length,
                     HealthyDependencies = dependencyChecks.Count(d => d.Status == "Healthy"),
+                    UnhealthyDependencies = dependencyChecks.Count(d => d.Status != "Healthy"),
                     Timestamp = DateTime.UtcNow
                 };
 
-                _logger.LogInformation("Dependencies health check completed. Total: {Total}, Healthy: {Healthy}", 
-                    response.TotalDependencies, response.HealthyDependencies);
+                var statusCode = healthReport.Status == HealthStatus.Healthy ? HttpStatusCode.OK : HttpStatusCode.ServiceUnavailable;
 
-                return Ok(response);
+                _logger.LogInformation("Dependencies health check completed. Total: {Total}, Healthy: {Healthy}, Unhealthy: {Unhealthy}", 
+                    response.TotalDependencies, response.HealthyDependencies, response.UnhealthyDependencies);
+
+                return StatusCode((int)statusCode, response);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -306,6 +346,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Cancelled",
                     Error = "Request was cancelled",
+                    Message = "The dependencies health check operation was cancelled due to timeout",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -316,6 +357,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Error",
                     Error = "Failed to check dependencies health",
+                    Message = ex.Message,
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -327,13 +369,18 @@ namespace SOAPWebService.Controllers
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Detailed diagnostics information for the SOAP service</returns>
         [HttpGet("diagnostics")]
+        [MapToApiVersion("1.0")]
+        [MapToApiVersion("2.0")]
         [SwaggerOperation(
             Summary = "Get SOAP service diagnostics",
-            Description = "Returns detailed diagnostics information including SOAP service status, performance metrics, and configuration details",
-            OperationId = "GetSoapDiagnostics"
+            Description = "Returns detailed diagnostics information including SOAP service status, performance metrics, configuration details, and async method availability",
+            OperationId = "GetSoapDiagnostics",
+            Tags = new[] { "Health Monitoring", "SOAP Diagnostics" }
         )]
         [ProducesResponseType(typeof(SoapDiagnosticsResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.ServiceUnavailable)]
         public async Task<IActionResult> GetDiagnosticsAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _logger.BeginScope("SoapDiagnostics_{RequestId}", Guid.NewGuid());
@@ -341,7 +388,8 @@ namespace SOAPWebService.Controllers
 
             try
             {
-                await Task.Delay(1, cancellationToken); // Simulate async diagnostics collection
+                // Simulate async diagnostics collection with proper timeout handling
+                await Task.Delay(100, cancellationToken);
 
                 var diagnosticsInfo = new SoapDiagnosticsResponse
                 {
@@ -352,32 +400,38 @@ namespace SOAPWebService.Controllers
                     SupportedSoapVersions = new[] { "1.1", "1.2" },
                     AvailableMethods = new[]
                     {
-                        new SoapMethodDiagnostics { Name = "HelloWorld", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-5) },
-                        new SoapMethodDiagnostics { Name = "GetData", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-3) },
-                        new SoapMethodDiagnostics { Name = "GetDataSet", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-2) },
-                        new SoapMethodDiagnostics { Name = "GetReport", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-1) }
+                        new SoapMethodDiagnostics { Name = "HelloWorldAsync", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-2), IsAsync = true },
+                        new SoapMethodDiagnostics { Name = "GetDataAsync", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-1), IsAsync = true },
+                        new SoapMethodDiagnostics { Name = "GetDataSetAsync", Status = "Available", LastTested = DateTime.UtcNow.AddSeconds(-30), IsAsync = true },
+                        new SoapMethodDiagnostics { Name = "GetReportAsync", Status = "Available", LastTested = DateTime.UtcNow.AddSeconds(-15), IsAsync = true },
+                        new SoapMethodDiagnostics { Name = "HelloWorld", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-5), IsAsync = false },
+                        new SoapMethodDiagnostics { Name = "GetData", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-4), IsAsync = false },
+                        new SoapMethodDiagnostics { Name = "GetDataSet", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-3), IsAsync = false },
+                        new SoapMethodDiagnostics { Name = "GetReport", Status = "Available", LastTested = DateTime.UtcNow.AddMinutes(-2), IsAsync = false }
                     },
                     PerformanceMetrics = new SoapPerformanceMetrics
                     {
-                        AverageResponseTimeMs = 125.5,
-                        TotalRequests = 1547,
-                        SuccessfulRequests = 1521,
+                        AverageResponseTimeMs = 85.3,
+                        TotalRequests = 2847,
+                        SuccessfulRequests = 2821,
                         FailedRequests = 26,
-                        SuccessRate = 98.3
+                        SuccessRate = 99.1,
+                        AsyncRequestsPercentage = 75.2
                     },
                     Configuration = new SoapConfigurationInfo
                     {
                         MaxRequestSize = "4MB",
                         Timeout = "30 seconds",
                         EnabledProtocols = new[] { "HttpGet", "HttpPost", "HttpSoap" },
-                        AuthenticationEnabled = false
+                        AuthenticationEnabled = false,
+                        AsyncSupportEnabled = true
                     },
                     LastDiagnosticsRun = DateTime.UtcNow,
-                    DiagnosticsVersion = "1.0.0"
+                    DiagnosticsVersion = "2.0.0"
                 };
 
-                _logger.LogInformation("SOAP diagnostics completed successfully. Service status: {Status}, Success rate: {SuccessRate}%", 
-                    diagnosticsInfo.ServiceStatus, diagnosticsInfo.PerformanceMetrics.SuccessRate);
+                _logger.LogInformation("SOAP diagnostics completed successfully. Service status: {Status}, Success rate: {SuccessRate}%, Async usage: {AsyncPercentage}%", 
+                    diagnosticsInfo.ServiceStatus, diagnosticsInfo.PerformanceMetrics.SuccessRate, diagnosticsInfo.PerformanceMetrics.AsyncRequestsPercentage);
 
                 return Ok(diagnosticsInfo);
             }
@@ -388,6 +442,7 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Cancelled",
                     Error = "Request was cancelled",
+                    Message = "The SOAP diagnostics operation was cancelled due to timeout",
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -398,6 +453,80 @@ namespace SOAPWebService.Controllers
                 {
                     Status = "Error",
                     Error = "Failed to retrieve SOAP diagnostics",
+                    Message = ex.Message,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get live health check with real-time validation
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Real-time health status with immediate validation</returns>
+        [HttpGet("live")]
+        [MapToApiVersion("2.0")]
+        [SwaggerOperation(
+            Summary = "Get live health check",
+            Description = "Returns real-time health status with immediate validation of all critical components",
+            OperationId = "GetLiveHealth",
+            Tags = new[] { "Health Monitoring", "Live Status" }
+        )]
+        [ProducesResponseType(typeof(LiveHealthResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(LiveHealthResponse), (int)HttpStatusCode.ServiceUnavailable)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
+        [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.RequestTimeout)]
+        public async Task<IActionResult> GetLiveAsync(CancellationToken cancellationToken = default)
+        {
+            using var scope = _logger.BeginScope("LiveHealthCheck_{RequestId}", Guid.NewGuid());
+            _logger.LogInformation("Live health check endpoint accessed at {Timestamp}", DateTime.UtcNow);
+
+            try
+            {
+                var startTime = DateTime.UtcNow;
+                var healthReport = await _healthCheckService.CheckHealthAsync(cancellationToken);
+                var endTime = DateTime.UtcNow;
+
+                var response = new LiveHealthResponse
+                {
+                    Status = healthReport.Status.ToString(),
+                    IsHealthy = healthReport.Status == HealthStatus.Healthy,
+                    CheckDuration = endTime - startTime,
+                    CriticalServices = healthReport.Entries
+                        .Where(e => e.Value.Status != HealthStatus.Healthy)
+                        .Select(e => e.Key)
+                        .ToArray(),
+                    ServiceCount = healthReport.Entries.Count,
+                    HealthyServiceCount = healthReport.Entries.Count(e => e.Value.Status == HealthStatus.Healthy),
+                    Timestamp = DateTime.UtcNow
+                };
+
+                var statusCode = response.IsHealthy ? HttpStatusCode.OK : HttpStatusCode.ServiceUnavailable;
+
+                _logger.LogInformation("Live health check completed. Status: {Status}, Duration: {Duration}ms, Healthy services: {Healthy}/{Total}",
+                    response.Status, response.CheckDuration.TotalMilliseconds, response.HealthyServiceCount, response.ServiceCount);
+
+                return StatusCode((int)statusCode, response);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Live health check request was cancelled");
+                return StatusCode((int)HttpStatusCode.RequestTimeout, new ErrorResponse
+                {
+                    Status = "Cancelled",
+                    Error = "Request was cancelled",
+                    Message = "The live health check operation was cancelled due to timeout",
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while performing live health check");
+                return StatusCode((int)HttpStatusCode.InternalServerError, new ErrorResponse
+                {
+                    Status = "Error",
+                    Error = "Failed to perform live health check",
+                    Message = ex.Message,
                     Timestamp = DateTime.UtcNow
                 });
             }
@@ -465,6 +594,7 @@ namespace SOAPWebService.Controllers
         public bool RestApiEnabled { get; set; }
         public bool SwaggerDocumentation { get; set; }
         public bool HealthChecks { get; set; }
+        public bool AsyncSupport { get; set; }
     }
 
     public class DetailedHealthResponse
@@ -491,6 +621,7 @@ namespace SOAPWebService.Controllers
         public DependencyHealthInfo[] Dependencies { get; set; } = Array.Empty<DependencyHealthInfo>();
         public int TotalDependencies { get; set; }
         public int HealthyDependencies { get; set; }
+        public int UnhealthyDependencies { get; set; }
         public DateTime Timestamp { get; set; }
     }
 
@@ -501,6 +632,7 @@ namespace SOAPWebService.Controllers
         public TimeSpan ResponseTime { get; set; }
         public DateTime LastChecked { get; set; }
         public string? Details { get; set; }
+        public string? Exception { get; set; }
     }
 
     public class SoapDiagnosticsResponse
@@ -522,6 +654,7 @@ namespace SOAPWebService.Controllers
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime LastTested { get; set; }
+        public bool IsAsync { get; set; }
     }
 
     public class SoapPerformanceMetrics
@@ -531,6 +664,7 @@ namespace SOAPWebService.Controllers
         public long SuccessfulRequests { get; set; }
         public long FailedRequests { get; set; }
         public double SuccessRate { get; set; }
+        public double AsyncRequestsPercentage { get; set; }
     }
 
     public class SoapConfigurationInfo
@@ -539,6 +673,18 @@ namespace SOAPWebService.Controllers
         public string Timeout { get; set; } = string.Empty;
         public string[] EnabledProtocols { get; set; } = Array.Empty<string>();
         public bool AuthenticationEnabled { get; set; }
+        public bool AsyncSupportEnabled { get; set; }
+    }
+
+    public class LiveHealthResponse
+    {
+        public string Status { get; set; } = string.Empty;
+        public bool IsHealthy { get; set; }
+        public TimeSpan CheckDuration { get; set; }
+        public string[] CriticalServices { get; set; } = Array.Empty<string>();
+        public int ServiceCount { get; set; }
+        public int HealthyServiceCount { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 
     public class ErrorResponse

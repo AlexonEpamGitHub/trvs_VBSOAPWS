@@ -19,7 +19,11 @@ builder.Services.Configure<KestrelServerOptions>(options =>
 builder.Services.AddSingleton<IDataService, DataService>();
 
 // Add services for SOAP
+builder.Services.AddSoapCore();
 builder.Services.AddSoapServiceOperationTuner(new SoapServiceOperationTuner());
+
+// Add SOAP behavior configuration
+builder.Services.AddSoapModelBindingFilter(new SoapModelBindingFilter());
 
 // Add Authentication services if needed
 builder.Services.AddAuthentication();
@@ -36,9 +40,20 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Add SOAP endpoint
-app.UseSoapEndpoint<IDataService>("/GetDataService.asmx", new SoapEncoderOptions(), 
-    SoapSerializer.DataContractSerializer);
+// Add SOAP endpoint with more configuration options
+app.UseSoapEndpoint<IDataService>("/GetDataService.asmx", new SoapEncoderOptions 
+{ 
+    WriteEncoding = System.Text.Encoding.UTF8,
+    ReaderQuotas = new System.Xml.XmlDictionaryReaderQuotas
+    {
+        MaxStringContentLength = 1048576
+    }
+}, 
+SoapSerializer.DataContractSerializer);
+
+// Add alternative endpoint with XmlSerializer if needed
+app.UseSoapEndpoint<IDataService>("/GetDataServiceXml.asmx", new SoapEncoderOptions(), 
+    SoapSerializer.XmlSerializer);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -51,5 +66,14 @@ public class SoapServiceOperationTuner : IServiceOperationTuner
     public void Tune(OperationDescription operation)
     {
         // Can be used to customize SOAP operations if needed
+    }
+}
+
+// Add model binding filter for SOAP requests
+public class SoapModelBindingFilter : ISoapModelBindingFilter
+{
+    public void OnModelBinding(object model, OperationDescription operation, System.Xml.XmlDictionaryReader reader)
+    {
+        // Custom model binding logic if needed
     }
 }

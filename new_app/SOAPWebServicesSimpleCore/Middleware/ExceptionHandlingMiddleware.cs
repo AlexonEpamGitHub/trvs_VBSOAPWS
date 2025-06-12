@@ -7,16 +7,13 @@ namespace SOAPWebServicesSimpleCore.Middleware
     using System;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
-    using System.Xml;
-    using System.Text;
-    using System.IO;
 
-    public class SOAPExceptionHandlingMiddleware
+    public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<SOAPExceptionHandlingMiddleware> _logger;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public SOAPExceptionHandlingMiddleware(RequestDelegate next, ILogger<SOAPExceptionHandlingMiddleware> logger)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             _next = next;
             _logger = logger;
@@ -30,99 +27,36 @@ namespace SOAPWebServicesSimpleCore.Middleware
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, ex);
-            }
-        }
-
-        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
-        {
-            string correlationId = Guid.NewGuid().ToString();
-            _logger.LogError(exception, "Error ID: {CorrelationId} - An unhandled exception occurred during request execution", correlationId);
-
-            // Capture original response body stream
-            var originalBodyStream = context.Response.Body;
-
-            // Create a new memory stream
-            using var memoryStream = new MemoryStream();
-            context.Response.Body = memoryStream;
-
-            // Get environment information
-            var env = context.RequestServices.GetService<IWebHostEnvironment>();
-            bool isDevelopment = env?.IsDevelopment() == true;
-            
-            // Set response code and content type for SOAP fault
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "text/xml; charset=utf-8";
-            
-            // Build SOAP fault message according to SOAP 1.1/1.2 standards
-            var soapFault = new StringBuilder();
-            soapFault.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            soapFault.AppendLine("<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">");
-            soapFault.AppendLine("  <soap:Body>");
-            soapFault.AppendLine("    <soap:Fault>");
-            soapFault.AppendLine("      <faultcode>soap:Server</faultcode>");
-            
-            if (isDevelopment)
-            {
-                // In development mode, include detailed exception information
-                soapFault.AppendLine($"      <faultstring>{XmlEscapeString(exception.Message)}</faultstring>");
-                soapFault.AppendLine("      <detail>");
-                soapFault.AppendLine($"        <ExceptionType>{XmlEscapeString(exception.GetType().FullName)}</ExceptionType>");
-                soapFault.AppendLine($"        <StackTrace>{XmlEscapeString(exception.StackTrace)}</StackTrace>");
+                _logger.LogError(ex, "An unhandled exception occurred");
                 
-                if (exception.InnerException != null)
+                // Only show detailed errors in development environment
+                // This replaces customErrors mode="RemoteOnly" from Web.config
+                if (context.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
                 {
-                    soapFault.AppendLine($"        <InnerException>{XmlEscapeString(exception.InnerException.Message)}</InnerException>");
-                    soapFault.AppendLine($"        <InnerExceptionType>{XmlEscapeString(exception.InnerException.GetType().FullName)}</InnerExceptionType>");
+                    throw;
                 }
-                
-                soapFault.AppendLine("      </detail>");
+
+                // Return a SOAP fault response
+                context.Response.ContentType = "text/xml";
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync($@"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+  <soap:Body>
+    <soap:Fault>
+      <faultcode>soap:Server</faultcode>
+      <faultstring>Internal Server Error</faultstring>
+    </soap:Fault>
+  </soap:Body>
+</soap:Envelope>");
             }
-            else
-            {
-                // In production mode, only include generic error message with correlation ID for support reference
-                soapFault.AppendLine($"      <faultstring>An error occurred processing your request. Please contact support with the following reference: {correlationId}</faultstring>");
-                soapFault.AppendLine("      <detail>");
-                soapFault.AppendLine($"        <ReferenceId>{correlationId}</ReferenceId>");
-                soapFault.AppendLine("      </detail>");
-            }
-            
-            soapFault.AppendLine("    </soap:Fault>");
-            soapFault.AppendLine("  </soap:Body>");
-            soapFault.AppendLine("</soap:Envelope>");
-            
-            await context.Response.WriteAsync(soapFault.ToString());
-            
-            // Copy the contents of the new memory stream to the original stream
-            memoryStream.Position = 0;
-            await memoryStream.CopyToAsync(originalBodyStream);
-            context.Response.Body = originalBodyStream;
-        }
-        
-        private static string XmlEscapeString(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-            {
-                return string.Empty;
-            }
-            
-            // Use proper XML escaping for SOAP messages
-            return System.Security.SecurityElement.Escape(input) ?? string.Empty;
         }
     }
 
-    public static class SOAPExceptionHandlingMiddlewareExtensions
+    public static class ExceptionHandlingMiddlewareExtensions
     {
-        public static IApplicationBuilder UseSOAPExceptionHandler(this IApplicationBuilder builder)
+        public static IApplicationBuilder UseExceptionHandlingMiddleware(this IApplicationBuilder builder)
         {
-            return builder.UseMiddleware<SOAPExceptionHandlingMiddleware>();
-        }
-        
-        // Add extension method for cleaner Program.cs registration
-        public static IServiceCollection AddSOAPErrorHandling(this IServiceCollection services)
-        {
-            // Register any dependencies specific to SOAP error handling
-            return services;
+            return builder.UseMiddleware<ExceptionHandlingMiddleware>();
         }
     }
 }

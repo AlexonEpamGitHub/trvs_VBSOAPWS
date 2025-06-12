@@ -55,6 +55,61 @@ namespace SOAPWebService.Models
         public string? Format { get; set; }
 
         /// <summary>
+        /// Gets or sets the user ID requesting the report.
+        /// </summary>
+        [DataMember(Name = "UserId", Order = 6, IsRequired = false)]
+        [XmlElement("UserId")]
+        [StringLength(50, ErrorMessage = "User ID must not exceed 50 characters.")]
+        public string? UserId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the culture information for report localization.
+        /// </summary>
+        [DataMember(Name = "Culture", Order = 7, IsRequired = false)]
+        [XmlElement("Culture")]
+        [StringLength(10, ErrorMessage = "Culture must not exceed 10 characters.")]
+        public string? Culture { get; set; }
+
+        /// <summary>
+        /// Gets or sets the priority level for report processing.
+        /// </summary>
+        [DataMember(Name = "Priority", Order = 8, IsRequired = false)]
+        [XmlElement("Priority")]
+        [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10.")]
+        public int Priority { get; set; } = 5;
+
+        /// <summary>
+        /// Gets or sets whether the report should be generated asynchronously.
+        /// </summary>
+        [DataMember(Name = "IsAsync", Order = 9, IsRequired = false)]
+        [XmlElement("IsAsync")]
+        public bool IsAsync { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the email address for report delivery notification.
+        /// </summary>
+        [DataMember(Name = "NotificationEmail", Order = 10, IsRequired = false)]
+        [XmlElement("NotificationEmail")]
+        [EmailAddress(ErrorMessage = "Invalid email address format.")]
+        [StringLength(255, ErrorMessage = "Email address must not exceed 255 characters.")]
+        public string? NotificationEmail { get; set; }
+
+        /// <summary>
+        /// Gets or sets the template ID to use for report generation.
+        /// </summary>
+        [DataMember(Name = "TemplateId", Order = 11, IsRequired = false)]
+        [XmlElement("TemplateId")]
+        [StringLength(50, ErrorMessage = "Template ID must not exceed 50 characters.")]
+        public string? TemplateId { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional metadata for the report.
+        /// </summary>
+        [DataMember(Name = "Metadata", Order = 12, IsRequired = false)]
+        [XmlElement("Metadata")]
+        public Dictionary<string, string>? Metadata { get; set; }
+
+        /// <summary>
         /// Validates the report input object with custom business logic.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
@@ -144,6 +199,61 @@ namespace SOAPWebService.Models
                 }
             }
 
+            // Validate culture information
+            if (!string.IsNullOrWhiteSpace(Culture))
+            {
+                if (!IsValidCultureInfo(Culture))
+                {
+                    results.Add(new ValidationResult(
+                        "Invalid culture information provided.",
+                        new[] { nameof(Culture) }));
+                }
+            }
+
+            // Validate metadata
+            if (Metadata != null)
+            {
+                if (Metadata.Count > 20)
+                {
+                    results.Add(new ValidationResult(
+                        "Maximum of 20 metadata entries allowed.",
+                        new[] { nameof(Metadata) }));
+                }
+
+                foreach (var metadata in Metadata)
+                {
+                    if (string.IsNullOrWhiteSpace(metadata.Key))
+                    {
+                        results.Add(new ValidationResult(
+                            "Metadata keys cannot be null or empty.",
+                            new[] { nameof(Metadata) }));
+                        break;
+                    }
+
+                    if (metadata.Key.Length > 50)
+                    {
+                        results.Add(new ValidationResult(
+                            $"Metadata key '{metadata.Key}' exceeds maximum length of 50 characters.",
+                            new[] { nameof(Metadata) }));
+                    }
+
+                    if (!string.IsNullOrEmpty(metadata.Value) && metadata.Value.Length > 255)
+                    {
+                        results.Add(new ValidationResult(
+                            $"Metadata value for key '{metadata.Key}' exceeds maximum length of 255 characters.",
+                            new[] { nameof(Metadata) }));
+                    }
+                }
+            }
+
+            // Validate asynchronous processing requirements
+            if (IsAsync && string.IsNullOrWhiteSpace(NotificationEmail))
+            {
+                results.Add(new ValidationResult(
+                    "Notification email is required for asynchronous report processing.",
+                    new[] { nameof(NotificationEmail) }));
+            }
+
             return results;
         }
 
@@ -159,6 +269,27 @@ namespace SOAPWebService.Models
 
             // Allow alphanumeric characters, spaces, hyphens, and underscores
             return reportName.All(c => char.IsLetterOrDigit(c) || c == ' ' || c == '-' || c == '_');
+        }
+
+        /// <summary>
+        /// Validates if the culture information is valid.
+        /// </summary>
+        /// <param name="culture">The culture string to validate.</param>
+        /// <returns>True if the culture is valid, otherwise false.</returns>
+        private static bool IsValidCultureInfo(string culture)
+        {
+            if (string.IsNullOrWhiteSpace(culture))
+                return false;
+
+            try
+            {
+                var cultureInfo = CultureInfo.GetCultureInfo(culture);
+                return cultureInfo != null;
+            }
+            catch (CultureNotFoundException)
+            {
+                return false;
+            }
         }
     }
 }

@@ -13,16 +13,13 @@ namespace SOAPWebServicesCore.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Session start logic here - equivalent to Session_Start in Global.asax.vb
+            // Session start logic here (equivalent to Session_Start in Global.asax.vb)
             _logger.LogInformation("Session started");
 
             await _next(context);
-
-            // Session end logic could go here, but ASP.NET Core sessions work differently
         }
     }
 
-    // Extension method for middleware registration
     public static class SessionMiddlewareExtensions
     {
         public static IApplicationBuilder UseSessionMiddleware(this IApplicationBuilder builder)

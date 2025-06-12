@@ -1,5 +1,6 @@
 using System.ServiceModel;
 using System.Runtime.Serialization;
+using System.Collections.Generic;
 
 namespace SOAPWebServicesCore.Services;
 

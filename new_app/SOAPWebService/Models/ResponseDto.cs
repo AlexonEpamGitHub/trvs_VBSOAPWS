@@ -144,6 +144,316 @@ public record ResponseDto : IValidatableObject
 }
 
 /// <summary>
+/// Generic response item for flexible data operations
+/// </summary>
+[DataContract]
+[XmlType("ResponseItem")]
+public record ResponseItem : IValidatableObject
+{
+    /// <summary>
+    /// Unique identifier for the response item
+    /// </summary>
+    [DataMember]
+    [XmlElement("Id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Id must be a positive number")]
+    public int Id { get; init; }
+
+    /// <summary>
+    /// Response item name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Name is required")]
+    [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Response item description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Response item value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public object? Value { get; init; }
+
+    /// <summary>
+    /// Data type of the response item value
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataType")]
+    [StringLength(50, ErrorMessage = "DataType cannot exceed 50 characters")]
+    public string? DataType { get; init; }
+
+    /// <summary>
+    /// Response item category or classification
+    /// </summary>
+    [DataMember]
+    [XmlElement("Category")]
+    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Response item creation timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("CreatedAt")]
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Response item last modified timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("LastModified")]
+    public DateTime? LastModified { get; init; }
+
+    /// <summary>
+    /// Indicates if the response item is active
+    /// </summary>
+    [DataMember]
+    [XmlElement("IsActive")]
+    public bool IsActive { get; init; } = true;
+
+    /// <summary>
+    /// Response item priority level
+    /// </summary>
+    [DataMember]
+    [XmlElement("Priority")]
+    [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10")]
+    public int Priority { get; init; } = 5;
+
+    /// <summary>
+    /// Tags associated with the response item
+    /// </summary>
+    [DataMember]
+    [XmlArray("Tags")]
+    [XmlArrayItem("Tag", Type = typeof(string))]
+    public List<string> Tags { get; init; } = [];
+
+    /// <summary>
+    /// Additional properties as key-value pairs
+    /// </summary>
+    [DataMember]
+    [XmlArray("Properties")]
+    [XmlArrayItem("Property", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Properties { get; init; } = [];
+
+    /// <summary>
+    /// Response item source system
+    /// </summary>
+    [DataMember]
+    [XmlElement("Source")]
+    [StringLength(100, ErrorMessage = "Source cannot exceed 100 characters")]
+    public string? Source { get; init; }
+
+    /// <summary>
+    /// Response item version
+    /// </summary>
+    [DataMember]
+    [XmlElement("Version")]
+    [StringLength(20, ErrorMessage = "Version cannot exceed 20 characters")]
+    public string? Version { get; init; }
+
+    /// <summary>
+    /// Status of the response item
+    /// </summary>
+    [DataMember]
+    [XmlElement("Status")]
+    [StringLength(20, ErrorMessage = "Status cannot exceed 20 characters")]
+    public string Status { get; init; } = "Active";
+
+    /// <summary>
+    /// Validates the response item
+    /// </summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = new List<ValidationResult>();
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            results.Add(new ValidationResult("Name cannot be empty or whitespace", [nameof(Name)]));
+        }
+
+        if (Id <= 0)
+        {
+            results.Add(new ValidationResult("Id must be greater than zero", [nameof(Id)]));
+        }
+
+        if (!string.IsNullOrEmpty(DataType) && Value is not null)
+        {
+            var isValidType = DataType.ToLowerInvariant() switch
+            {
+                "string" => Value is string,
+                "int" or "integer" => Value is int,
+                "decimal" or "double" => Value is decimal or double,
+                "bool" or "boolean" => Value is bool,
+                "datetime" => Value is DateTime,
+                _ => true // Allow unknown types
+            };
+
+            if (!isValidType)
+            {
+                results.Add(new ValidationResult($"Value type does not match specified DataType '{DataType}'", [nameof(Value), nameof(DataType)]));
+            }
+        }
+
+        if (Priority < 1 || Priority > 10)
+        {
+            results.Add(new ValidationResult("Priority must be between 1 and 10", [nameof(Priority)]));
+        }
+
+        return results;
+    }
+}
+
+/// <summary>
+/// Response metadata containing additional information about the response
+/// </summary>
+[DataContract]
+[XmlType("ResponseMetadata")]
+public record ResponseMetadata
+{
+    /// <summary>
+    /// Response type or category
+    /// </summary>
+    [DataMember]
+    [XmlElement("ResponseType")]
+    [StringLength(50, ErrorMessage = "ResponseType cannot exceed 50 characters")]
+    public string? ResponseType { get; init; }
+
+    /// <summary>
+    /// Response description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Response parameters used for generation
+    /// </summary>
+    [DataMember]
+    [XmlArray("Parameters")]
+    [XmlArrayItem("Parameter", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Parameters { get; init; } = [];
+
+    /// <summary>
+    /// Data date range start
+    /// </summary>
+    [DataMember]
+    [XmlElement("DateRangeStart")]
+    public DateTime? DateRangeStart { get; init; }
+
+    /// <summary>
+    /// Data date range end
+    /// </summary>
+    [DataMember]
+    [XmlElement("DateRangeEnd")]
+    public DateTime? DateRangeEnd { get; init; }
+
+    /// <summary>
+    /// Response data size in bytes if applicable
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataSizeBytes")]
+    [Range(0, long.MaxValue, ErrorMessage = "DataSizeBytes must be non-negative")]
+    public long? DataSizeBytes { get; init; }
+
+    /// <summary>
+    /// Source system or service that generated the response
+    /// </summary>
+    [DataMember]
+    [XmlElement("Source")]
+    [StringLength(100, ErrorMessage = "Source cannot exceed 100 characters")]
+    public string? Source { get; init; }
+
+    /// <summary>
+    /// Version of the response format or schema
+    /// </summary>
+    [DataMember]
+    [XmlElement("Version")]
+    [StringLength(20, ErrorMessage = "Version cannot exceed 20 characters")]
+    public string? Version { get; init; }
+
+    /// <summary>
+    /// Server or instance identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("ServerId")]
+    [StringLength(50, ErrorMessage = "ServerId cannot exceed 50 characters")]
+    public string? ServerId { get; init; }
+
+    /// <summary>
+    /// Request correlation identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("CorrelationId")]
+    [StringLength(100, ErrorMessage = "CorrelationId cannot exceed 100 characters")]
+    public string? CorrelationId { get; init; }
+
+    /// <summary>
+    /// Number of successful operations
+    /// </summary>
+    [DataMember]
+    [XmlElement("SuccessCount")]
+    [Range(0, int.MaxValue, ErrorMessage = "SuccessCount must be non-negative")]
+    public int SuccessCount { get; init; }
+
+    /// <summary>
+    /// Number of failed operations
+    /// </summary>
+    [DataMember]
+    [XmlElement("ErrorCount")]
+    [Range(0, int.MaxValue, ErrorMessage = "ErrorCount must be non-negative")]
+    public int ErrorCount { get; init; }
+
+    /// <summary>
+    /// Number of warnings encountered
+    /// </summary>
+    [DataMember]
+    [XmlElement("WarningCount")]
+    [Range(0, int.MaxValue, ErrorMessage = "WarningCount must be non-negative")]
+    public int WarningCount { get; init; }
+
+    /// <summary>
+    /// Collection of warnings encountered during processing
+    /// </summary>
+    [DataMember]
+    [XmlArray("Warnings")]
+    [XmlArrayItem("Warning", Type = typeof(string))]
+    public List<string> Warnings { get; init; } = [];
+
+    /// <summary>
+    /// Collection of errors encountered during processing
+    /// </summary>
+    [DataMember]
+    [XmlArray("Errors")]
+    [XmlArrayItem("Error", Type = typeof(string))]
+    public List<string> Errors { get; init; } = [];
+
+    /// <summary>
+    /// Key performance indicators or metrics
+    /// </summary>
+    [DataMember]
+    [XmlArray("Metrics")]
+    [XmlArrayItem("Metric", Type = typeof(MetricItem))]
+    public List<MetricItem> Metrics { get; init; } = [];
+
+    /// <summary>
+    /// Additional metadata as key-value pairs
+    /// </summary>
+    [DataMember]
+    [XmlArray("AdditionalData")]
+    [XmlArrayItem("Data", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> AdditionalData { get; init; } = [];
+}
+
+/// <summary>
 /// Individual sample data item for structured data operations
 /// </summary>
 [DataContract]
@@ -304,6 +614,94 @@ public record SampleDataItem : IValidatableObject
 }
 
 /// <summary>
+/// Sample item for backward compatibility and specific sample operations
+/// </summary>
+[DataContract]
+[XmlType("SampleItem")]
+public record SampleItem : SampleDataItem
+{
+    /// <summary>
+    /// Sample item code or identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("Code")]
+    [StringLength(50, ErrorMessage = "Code cannot exceed 50 characters")]
+    public string? Code { get; init; }
+
+    /// <summary>
+    /// Sample item type
+    /// </summary>
+    [DataMember]
+    [XmlElement("Type")]
+    [StringLength(30, ErrorMessage = "Type cannot exceed 30 characters")]
+    public string? Type { get; init; }
+
+    /// <summary>
+    /// Sample item status
+    /// </summary>
+    [DataMember]
+    [XmlElement("Status")]
+    [StringLength(20, ErrorMessage = "Status cannot exceed 20 characters")]
+    public string Status { get; init; } = "Active";
+
+    /// <summary>
+    /// Sample owner or creator
+    /// </summary>
+    [DataMember]
+    [XmlElement("Owner")]
+    [StringLength(100, ErrorMessage = "Owner cannot exceed 100 characters")]
+    public string? Owner { get; init; }
+
+    /// <summary>
+    /// Sample location or path
+    /// </summary>
+    [DataMember]
+    [XmlElement("Location")]
+    [StringLength(200, ErrorMessage = "Location cannot exceed 200 characters")]
+    public string? Location { get; init; }
+
+    /// <summary>
+    /// Sample size in bytes if applicable
+    /// </summary>
+    [DataMember]
+    [XmlElement("SizeBytes")]
+    [Range(0, long.MaxValue, ErrorMessage = "SizeBytes must be non-negative")]
+    public long? SizeBytes { get; init; }
+
+    /// <summary>
+    /// Sample checksum for integrity verification
+    /// </summary>
+    [DataMember]
+    [XmlElement("Checksum")]
+    [StringLength(64, ErrorMessage = "Checksum cannot exceed 64 characters")]
+    public string? Checksum { get; init; }
+
+    /// <summary>
+    /// Sample format or file type
+    /// </summary>
+    [DataMember]
+    [XmlElement("Format")]
+    [StringLength(20, ErrorMessage = "Format cannot exceed 20 characters")]
+    public string? Format { get; init; }
+
+    /// <summary>
+    /// Sample compression type if applicable
+    /// </summary>
+    [DataMember]
+    [XmlElement("Compression")]
+    [StringLength(20, ErrorMessage = "Compression cannot exceed 20 characters")]
+    public string? Compression { get; init; }
+
+    /// <summary>
+    /// Sample access permissions
+    /// </summary>
+    [DataMember]
+    [XmlArray("Permissions")]
+    [XmlArrayItem("Permission", Type = typeof(string))]
+    public List<string> Permissions { get; init; } = [];
+}
+
+/// <summary>
 /// Response data transfer object for sample data operations, replacing legacy DataSet usage
 /// </summary>
 [DataContract]
@@ -379,6 +777,13 @@ public record SampleDataResponse : ResponseDtoBase
     [XmlElement("Version")]
     [StringLength(20, ErrorMessage = "Version cannot exceed 20 characters")]
     public string? Version { get; init; }
+
+    /// <summary>
+    /// Response metadata
+    /// </summary>
+    [DataMember]
+    [XmlElement("Metadata")]
+    public ResponseMetadata? Metadata { get; init; }
 
     /// <summary>
     /// Validates the sample data response
@@ -513,6 +918,89 @@ public record ReportDataItem : SampleDataItem
     [XmlElement("GroupId")]
     [StringLength(50, ErrorMessage = "GroupId cannot exceed 50 characters")]
     public string? GroupId { get; init; }
+}
+
+/// <summary>
+/// Report item for specific report operations
+/// </summary>
+[DataContract]
+[XmlType("ReportItem")]
+public record ReportItem : ReportDataItem
+{
+    /// <summary>
+    /// Report item identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("ItemId")]
+    [StringLength(50, ErrorMessage = "ItemId cannot exceed 50 characters")]
+    public string? ItemId { get; init; }
+
+    /// <summary>
+    /// Report item weight for calculations
+    /// </summary>
+    [DataMember]
+    [XmlElement("Weight")]
+    [Range(0.0, double.MaxValue, ErrorMessage = "Weight must be non-negative")]
+    public double Weight { get; init; } = 1.0;
+
+    /// <summary>
+    /// Report item threshold value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Threshold")]
+    public decimal? Threshold { get; init; }
+
+    /// <summary>
+    /// Report item alert level
+    /// </summary>
+    [DataMember]
+    [XmlElement("AlertLevel")]
+    [StringLength(20, ErrorMessage = "AlertLevel cannot exceed 20 characters")]
+    public string? AlertLevel { get; init; }
+
+    /// <summary>
+    /// Report item trend indicator
+    /// </summary>
+    [DataMember]
+    [XmlElement("Trend")]
+    [StringLength(20, ErrorMessage = "Trend cannot exceed 20 characters")]
+    public string? Trend { get; init; }
+
+    /// <summary>
+    /// Previous value for comparison
+    /// </summary>
+    [DataMember]
+    [XmlElement("PreviousValue")]
+    public object? PreviousValue { get; init; }
+
+    /// <summary>
+    /// Percentage change from previous value
+    /// </summary>
+    [DataMember]
+    [XmlElement("PercentChange")]
+    public decimal? PercentChange { get; init; }
+
+    /// <summary>
+    /// Report item confidence level
+    /// </summary>
+    [DataMember]
+    [XmlElement("ConfidenceLevel")]
+    [Range(0.0, 100.0, ErrorMessage = "ConfidenceLevel must be between 0 and 100")]
+    public double? ConfidenceLevel { get; init; }
+
+    /// <summary>
+    /// Report item variance from expected
+    /// </summary>
+    [DataMember]
+    [XmlElement("Variance")]
+    public decimal? Variance { get; init; }
+
+    /// <summary>
+    /// Expected value for comparison
+    /// </summary>
+    [DataMember]
+    [XmlElement("ExpectedValue")]
+    public object? ExpectedValue { get; init; }
 }
 
 /// <summary>
@@ -1165,6 +1653,47 @@ public static class ResponseDtoFactory
             HasMorePages = hasMorePages,
             CollectionName = "PaginatedSampleData",
             DataSource = "PaginationService",
+            Version = "1.0"
+        };
+    }
+
+    /// <summary>
+    /// Creates a generic response DTO
+    /// </summary>
+    /// <param name="success">Success status</param>
+    /// <param name="message">Response message</param>
+    /// <param name="operationId">Operation identifier</param>
+    /// <returns>ResponseDto with specified parameters</returns>
+    public static ResponseDto CreateResponseDto(bool success = true, string message = "", string? operationId = null)
+    {
+        return new ResponseDto
+        {
+            Success = success,
+            Message = message,
+            OperationId = operationId,
+            ValidationErrors = success ? [] : [message]
+        };
+    }
+
+    /// <summary>
+    /// Creates a response with custom items
+    /// </summary>
+    /// <param name="items">Collection of response items</param>
+    /// <param name="operationId">Operation identifier</param>
+    /// <param name="metadata">Response metadata</param>
+    /// <returns>Custom response with items and metadata</returns>
+    public static SampleDataResponse CreateCustomSampleDataResponse(IEnumerable<SampleDataItem> items, string? operationId = null, ResponseMetadata? metadata = null)
+    {
+        var itemList = items.ToList();
+        
+        return new SampleDataResponse
+        {
+            Status = "Success",
+            Message = "Custom sample data response",
+            OperationId = operationId,
+            SampleItems = itemList,
+            TotalCount = itemList.Count,
+            Metadata = metadata,
             Version = "1.0"
         };
     }

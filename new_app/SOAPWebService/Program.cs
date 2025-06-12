@@ -10,7 +10,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add SOAP Service registration - replaces legacy service instantiation
-builder.Services.AddSingleton<IGetDataService, GetDataService>();
+builder.Services.AddScoped<IGetDataService, GetDataService>();
 
 // Add SoapCore services for SOAP endpoint support
 builder.Services.AddSoapCore();
@@ -24,7 +24,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Configure routing middleware
+// Configure routing middleware - must be called before UseSoapEndpoint
 app.UseRouting();
 
 // Configure SOAP endpoint at /GetDataService.asmx with XmlSerializer - replaces legacy .asmx handler

@@ -1,7 +1,6 @@
-namespace SOAPWebServicesSimpleCore.Models
+namespace SOAPWebServicesSimpleCore.Models;
+
+public sealed class ReportInput
 {
-    public class ReportInput
-    {
-        public string? ReportName { get; set; }
-    }
+    public required string? ReportName { get; set; }
 }

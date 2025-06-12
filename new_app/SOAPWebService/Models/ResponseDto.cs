@@ -5,28 +5,12 @@ using System.Xml.Serialization;
 namespace SOAPWebService.Models;
 
 /// <summary>
-/// Response data transfer object for SOAP operations
+/// Base response data transfer object for SOAP operations
 /// </summary>
 [DataContract]
 [XmlType("Response")]
 public record ResponseDto : IValidatableObject
 {
-    /// <summary>
-    /// Collection of data items
-    /// </summary>
-    [DataMember]
-    [XmlArray("Items")]
-    [XmlArrayItem("DataItem", Type = typeof(DataItem))]
-    public List<DataItem> Items { get; init; } = [];
-
-    /// <summary>
-    /// Response message
-    /// </summary>
-    [DataMember]
-    [XmlElement("Message")]
-    [StringLength(500, ErrorMessage = "Message cannot exceed 500 characters")]
-    public string Message { get; init; } = string.Empty;
-
     /// <summary>
     /// Timestamp of the response
     /// </summary>
@@ -42,19 +26,12 @@ public record ResponseDto : IValidatableObject
     public bool Success { get; init; } = true;
 
     /// <summary>
-    /// Response metadata containing additional information
+    /// Response message
     /// </summary>
     [DataMember]
-    [XmlElement("Metadata")]
-    public ResponseMetadata? Metadata { get; init; }
-
-    /// <summary>
-    /// Collection of validation errors if any occurred
-    /// </summary>
-    [DataMember]
-    [XmlArray("ValidationErrors")]
-    [XmlArrayItem("Error", Type = typeof(string))]
-    public List<string> ValidationErrors { get; init; } = [];
+    [XmlElement("Message")]
+    [StringLength(500, ErrorMessage = "Message cannot exceed 500 characters")]
+    public string Message { get; init; } = string.Empty;
 
     /// <summary>
     /// Operation identifier for tracking
@@ -65,236 +42,51 @@ public record ResponseDto : IValidatableObject
     public string? OperationId { get; init; }
 
     /// <summary>
+    /// Collection of validation errors if any occurred
+    /// </summary>
+    [DataMember]
+    [XmlArray("ValidationErrors")]
+    [XmlArrayItem("Error", Type = typeof(string))]
+    public List<string> ValidationErrors { get; init; } = [];
+
+    /// <summary>
     /// Validates the response object
     /// </summary>
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         var results = new List<ValidationResult>();
-        
-        if (Items is null)
-        {
-            results.Add(new ValidationResult("Items collection cannot be null", [nameof(Items)]));
-        }
-        else
-        {
-            for (int i = 0; i < Items.Count; i++)
-            {
-                var itemResults = new List<ValidationResult>();
-                var itemContext = new ValidationContext(Items[i]);
-                Validator.TryValidateObject(Items[i], itemContext, itemResults, true);
-                
-                foreach (var itemResult in itemResults)
-                {
-                    results.Add(new ValidationResult(
-                        $"Item {i}: {itemResult.ErrorMessage}",
-                        itemResult.MemberNames.Select(m => $"Items[{i}].{m}")
-                    ));
-                }
-            }
-        }
 
         if (!string.IsNullOrEmpty(OperationId) && OperationId.Length > 50)
         {
             results.Add(new ValidationResult("OperationId cannot exceed 50 characters", [nameof(OperationId)]));
         }
-        
+
+        if (!string.IsNullOrEmpty(Message) && Message.Length > 500)
+        {
+            results.Add(new ValidationResult("Message cannot exceed 500 characters", [nameof(Message)]));
+        }
+
         return results;
     }
 }
 
 /// <summary>
-/// Individual data item replacing DataRow functionality
+/// Response data transfer object for sample data operations
 /// </summary>
 [DataContract]
-[XmlType("DataItem")]
-public record DataItem : IValidatableObject
+[XmlType("SampleDataResponse")]
+public record SampleDataResponse : ResponseDto
 {
     /// <summary>
-    /// Unique identifier
+    /// Collection of sample data items
     /// </summary>
     [DataMember]
-    [XmlElement("Id")]
-    [Range(1, int.MaxValue, ErrorMessage = "Id must be a positive number")]
-    public int Id { get; init; }
+    [XmlArray("SampleItems")]
+    [XmlArrayItem("SampleDataItem", Type = typeof(SampleDataItem))]
+    public List<SampleDataItem> SampleItems { get; init; } = [];
 
     /// <summary>
-    /// Item name
-    /// </summary>
-    [DataMember]
-    [XmlElement("Name")]
-    [Required(ErrorMessage = "Name is required")]
-    [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
-    public string Name { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Item description
-    /// </summary>
-    [DataMember]
-    [XmlElement("Description")]
-    [StringLength(250, ErrorMessage = "Description cannot exceed 250 characters")]
-    public string? Description { get; init; }
-
-    /// <summary>
-    /// Creation timestamp
-    /// </summary>
-    [DataMember]
-    [XmlElement("CreatedAt")]
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// Item value represented as object for flexible data types
-    /// </summary>
-    [DataMember]
-    [XmlElement("Value")]
-    public object? Value { get; init; }
-
-    /// <summary>
-    /// Data type of the value
-    /// </summary>
-    [DataMember]
-    [XmlElement("DataType")]
-    [StringLength(50, ErrorMessage = "DataType cannot exceed 50 characters")]
-    public string? DataType { get; init; }
-
-    /// <summary>
-    /// Indicates if the item is active
-    /// </summary>
-    [DataMember]
-    [XmlElement("IsActive")]
-    public bool IsActive { get; init; } = true;
-
-    /// <summary>
-    /// Item category or classification
-    /// </summary>
-    [DataMember]
-    [XmlElement("Category")]
-    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
-    public string? Category { get; init; }
-
-    /// <summary>
-    /// Item priority level
-    /// </summary>
-    [DataMember]
-    [XmlElement("Priority")]
-    [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10")]
-    public int Priority { get; init; } = 5;
-
-    /// <summary>
-    /// Last modified timestamp
-    /// </summary>
-    [DataMember]
-    [XmlElement("LastModified")]
-    public DateTime? LastModified { get; init; }
-
-    /// <summary>
-    /// User who last modified the item
-    /// </summary>
-    [DataMember]
-    [XmlElement("ModifiedBy")]
-    [StringLength(100, ErrorMessage = "ModifiedBy cannot exceed 100 characters")]
-    public string? ModifiedBy { get; init; }
-
-    /// <summary>
-    /// Additional properties as key-value pairs
-    /// </summary>
-    [DataMember]
-    [XmlArray("Properties")]
-    [XmlArrayItem("Property", Type = typeof(KeyValueItem))]
-    public List<KeyValueItem> Properties { get; init; } = [];
-
-    /// <summary>
-    /// Tags associated with the item
-    /// </summary>
-    [DataMember]
-    [XmlArray("Tags")]
-    [XmlArrayItem("Tag", Type = typeof(string))]
-    public List<string> Tags { get; init; } = [];
-
-    /// <summary>
-    /// Validates the data item
-    /// </summary>
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        var results = new List<ValidationResult>();
-        
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            results.Add(new ValidationResult("Name cannot be empty or whitespace", [nameof(Name)]));
-        }
-
-        if (Id <= 0)
-        {
-            results.Add(new ValidationResult("Id must be greater than zero", [nameof(Id)]));
-        }
-
-        if (!string.IsNullOrEmpty(DataType) && Value is not null)
-        {
-            var isValidType = DataType.ToLowerInvariant() switch
-            {
-                "string" => Value is string,
-                "int" or "integer" => Value is int,
-                "decimal" or "double" => Value is decimal or double,
-                "bool" or "boolean" => Value is bool,
-                "datetime" => Value is DateTime,
-                _ => true // Allow unknown types
-            };
-
-            if (!isValidType)
-            {
-                results.Add(new ValidationResult($"Value type does not match specified DataType '{DataType}'", [nameof(Value), nameof(DataType)]));
-            }
-        }
-
-        if (Priority < 1 || Priority > 10)
-        {
-            results.Add(new ValidationResult("Priority must be between 1 and 10", [nameof(Priority)]));
-        }
-        
-        return results;
-    }
-}
-
-/// <summary>
-/// Key-value pair item for flexible property storage
-/// </summary>
-[DataContract]
-[XmlType("KeyValueItem")]
-public record KeyValueItem
-{
-    /// <summary>
-    /// Property key
-    /// </summary>
-    [DataMember]
-    [XmlElement("Key")]
-    [Required(ErrorMessage = "Key is required")]
-    [StringLength(100, ErrorMessage = "Key cannot exceed 100 characters")]
-    public string Key { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Property value
-    /// </summary>
-    [DataMember]
-    [XmlElement("Value")]
-    public object? Value { get; init; }
-
-    /// <summary>
-    /// Value type for serialization purposes
-    /// </summary>
-    [DataMember]
-    [XmlElement("ValueType")]
-    [StringLength(50, ErrorMessage = "ValueType cannot exceed 50 characters")]
-    public string? ValueType { get; init; }
-}
-
-/// <summary>
-/// Response metadata containing additional information about the response
-/// </summary>
-[DataContract]
-[XmlType("ResponseMetadata")]
-public record ResponseMetadata
-{
-    /// <summary>
-    /// Total number of items in the complete dataset
+    /// Total count of available sample items
     /// </summary>
     [DataMember]
     [XmlElement("TotalCount")]
@@ -302,7 +94,30 @@ public record ResponseMetadata
     public int TotalCount { get; init; }
 
     /// <summary>
-    /// Current page number for paginated responses
+    /// Sample data collection metadata
+    /// </summary>
+    [DataMember]
+    [XmlElement("CollectionName")]
+    [StringLength(100, ErrorMessage = "CollectionName cannot exceed 100 characters")]
+    public string? CollectionName { get; init; }
+
+    /// <summary>
+    /// Data source identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataSource")]
+    [StringLength(100, ErrorMessage = "DataSource cannot exceed 100 characters")]
+    public string? DataSource { get; init; }
+
+    /// <summary>
+    /// Last updated timestamp for the sample data
+    /// </summary>
+    [DataMember]
+    [XmlElement("LastUpdated")]
+    public DateTime? LastUpdated { get; init; }
+
+    /// <summary>
+    /// Pagination information
     /// </summary>
     [DataMember]
     [XmlElement("PageNumber")]
@@ -310,7 +125,7 @@ public record ResponseMetadata
     public int PageNumber { get; init; } = 1;
 
     /// <summary>
-    /// Number of items per page
+    /// Page size for pagination
     /// </summary>
     [DataMember]
     [XmlElement("PageSize")]
@@ -318,45 +133,14 @@ public record ResponseMetadata
     public int PageSize { get; init; } = 10;
 
     /// <summary>
-    /// Total number of pages available
+    /// Indicates if more pages are available
     /// </summary>
     [DataMember]
-    [XmlElement("TotalPages")]
-    [Range(0, int.MaxValue, ErrorMessage = "TotalPages must be non-negative")]
-    public int TotalPages { get; init; }
+    [XmlElement("HasMorePages")]
+    public bool HasMorePages { get; init; }
 
     /// <summary>
-    /// Indicates if there are more pages available
-    /// </summary>
-    [DataMember]
-    [XmlElement("HasNextPage")]
-    public bool HasNextPage { get; init; }
-
-    /// <summary>
-    /// Indicates if there are previous pages available
-    /// </summary>
-    [DataMember]
-    [XmlElement("HasPreviousPage")]
-    public bool HasPreviousPage { get; init; }
-
-    /// <summary>
-    /// Processing duration in milliseconds
-    /// </summary>
-    [DataMember]
-    [XmlElement("ProcessingTimeMs")]
-    [Range(0, long.MaxValue, ErrorMessage = "ProcessingTimeMs must be non-negative")]
-    public long ProcessingTimeMs { get; init; }
-
-    /// <summary>
-    /// Source system or service that generated the response
-    /// </summary>
-    [DataMember]
-    [XmlElement("Source")]
-    [StringLength(100, ErrorMessage = "Source cannot exceed 100 characters")]
-    public string? Source { get; init; }
-
-    /// <summary>
-    /// Version of the API or service
+    /// Sample data version
     /// </summary>
     [DataMember]
     [XmlElement("Version")]
@@ -364,37 +148,75 @@ public record ResponseMetadata
     public string? Version { get; init; }
 
     /// <summary>
-    /// Server or instance identifier
+    /// Validates the sample data response
     /// </summary>
-    [DataMember]
-    [XmlElement("ServerId")]
-    [StringLength(50, ErrorMessage = "ServerId cannot exceed 50 characters")]
-    public string? ServerId { get; init; }
+    public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = base.Validate(validationContext).ToList();
 
-    /// <summary>
-    /// Request correlation identifier
-    /// </summary>
-    [DataMember]
-    [XmlElement("CorrelationId")]
-    [StringLength(100, ErrorMessage = "CorrelationId cannot exceed 100 characters")]
-    public string? CorrelationId { get; init; }
+        if (SampleItems is null)
+        {
+            results.Add(new ValidationResult("SampleItems collection cannot be null", [nameof(SampleItems)]));
+        }
+        else
+        {
+            for (int i = 0; i < SampleItems.Count; i++)
+            {
+                var itemResults = new List<ValidationResult>();
+                var itemContext = new ValidationContext(SampleItems[i]);
+                Validator.TryValidateObject(SampleItems[i], itemContext, itemResults, true);
 
-    /// <summary>
-    /// Additional metadata as key-value pairs
-    /// </summary>
-    [DataMember]
-    [XmlArray("AdditionalData")]
-    [XmlArrayItem("Data", Type = typeof(KeyValueItem))]
-    public List<KeyValueItem> AdditionalData { get; init; } = [];
+                foreach (var itemResult in itemResults)
+                {
+                    results.Add(new ValidationResult(
+                        $"SampleItem {i}: {itemResult.ErrorMessage}",
+                        itemResult.MemberNames.Select(m => $"SampleItems[{i}].{m}")
+                    ));
+                }
+            }
+        }
+
+        if (TotalCount < 0)
+        {
+            results.Add(new ValidationResult("TotalCount must be non-negative", [nameof(TotalCount)]));
+        }
+
+        if (PageNumber < 1)
+        {
+            results.Add(new ValidationResult("PageNumber must be positive", [nameof(PageNumber)]));
+        }
+
+        if (PageSize < 1 || PageSize > 1000)
+        {
+            results.Add(new ValidationResult("PageSize must be between 1 and 1000", [nameof(PageSize)]));
+        }
+
+        return results;
+    }
 }
 
 /// <summary>
-/// Specialized response DTO for report operations
+/// Response data transfer object for report operations
 /// </summary>
 [DataContract]
-[XmlType("ReportResponse")]
-public record ReportResponseDto : ResponseDto
+[XmlType("ReportDataResponse")]
+public record ReportDataResponse : ResponseDto
 {
+    /// <summary>
+    /// Collection of report data items
+    /// </summary>
+    [DataMember]
+    [XmlArray("ReportItems")]
+    [XmlArrayItem("ReportDataItem", Type = typeof(ReportDataItem))]
+    public List<ReportDataItem> ReportItems { get; init; } = [];
+
+    /// <summary>
+    /// Report metadata containing additional information
+    /// </summary>
+    [DataMember]
+    [XmlElement("ReportMetadata")]
+    public ReportMetadata? ReportMetadata { get; init; }
+
     /// <summary>
     /// Report identifier
     /// </summary>
@@ -429,6 +251,30 @@ public record ReportResponseDto : ResponseDto
     public string? RequestedBy { get; init; }
 
     /// <summary>
+    /// Report execution status
+    /// </summary>
+    [DataMember]
+    [XmlElement("ExecutionStatus")]
+    [StringLength(20, ErrorMessage = "ExecutionStatus cannot exceed 20 characters")]
+    public string ExecutionStatus { get; init; } = "Completed";
+
+    /// <summary>
+    /// Total number of report items
+    /// </summary>
+    [DataMember]
+    [XmlElement("TotalItems")]
+    [Range(0, int.MaxValue, ErrorMessage = "TotalItems must be non-negative")]
+    public int TotalItems { get; init; }
+
+    /// <summary>
+    /// Processing duration in milliseconds
+    /// </summary>
+    [DataMember]
+    [XmlElement("ProcessingTimeMs")]
+    [Range(0, long.MaxValue, ErrorMessage = "ProcessingTimeMs must be non-negative")]
+    public long ProcessingTimeMs { get; init; }
+
+    /// <summary>
     /// Report format (PDF, Excel, CSV, etc.)
     /// </summary>
     [DataMember]
@@ -436,6 +282,402 @@ public record ReportResponseDto : ResponseDto
     [StringLength(20, ErrorMessage = "Format cannot exceed 20 characters")]
     public string? Format { get; init; }
 
+    /// <summary>
+    /// Report expiration date
+    /// </summary>
+    [DataMember]
+    [XmlElement("ExpiresAt")]
+    public DateTime? ExpiresAt { get; init; }
+
+    /// <summary>
+    /// Validates the report data response
+    /// </summary>
+    public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = base.Validate(validationContext).ToList();
+
+        if (string.IsNullOrWhiteSpace(ReportId))
+        {
+            results.Add(new ValidationResult("ReportId is required", [nameof(ReportId)]));
+        }
+
+        if (string.IsNullOrWhiteSpace(ReportName))
+        {
+            results.Add(new ValidationResult("ReportName is required", [nameof(ReportName)]));
+        }
+
+        if (ReportItems is null)
+        {
+            results.Add(new ValidationResult("ReportItems collection cannot be null", [nameof(ReportItems)]));
+        }
+        else
+        {
+            for (int i = 0; i < ReportItems.Count; i++)
+            {
+                var itemResults = new List<ValidationResult>();
+                var itemContext = new ValidationContext(ReportItems[i]);
+                Validator.TryValidateObject(ReportItems[i], itemContext, itemResults, true);
+
+                foreach (var itemResult in itemResults)
+                {
+                    results.Add(new ValidationResult(
+                        $"ReportItem {i}: {itemResult.ErrorMessage}",
+                        itemResult.MemberNames.Select(m => $"ReportItems[{i}].{m}")
+                    ));
+                }
+            }
+        }
+
+        if (TotalItems < 0)
+        {
+            results.Add(new ValidationResult("TotalItems must be non-negative", [nameof(TotalItems)]));
+        }
+
+        if (ProcessingTimeMs < 0)
+        {
+            results.Add(new ValidationResult("ProcessingTimeMs must be non-negative", [nameof(ProcessingTimeMs)]));
+        }
+
+        return results;
+    }
+}
+
+/// <summary>
+/// Individual sample data item for structured sample data operations
+/// </summary>
+[DataContract]
+[XmlType("SampleDataItem")]
+public record SampleDataItem : IValidatableObject
+{
+    /// <summary>
+    /// Unique identifier for the sample item
+    /// </summary>
+    [DataMember]
+    [XmlElement("Id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Id must be a positive number")]
+    public int Id { get; init; }
+
+    /// <summary>
+    /// Sample item name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Name is required")]
+    [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Sample item description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Sample value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public object? Value { get; init; }
+
+    /// <summary>
+    /// Data type of the sample value
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataType")]
+    [StringLength(50, ErrorMessage = "DataType cannot exceed 50 characters")]
+    public string? DataType { get; init; }
+
+    /// <summary>
+    /// Sample category or classification
+    /// </summary>
+    [DataMember]
+    [XmlElement("Category")]
+    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Sample creation timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("CreatedAt")]
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Sample last modified timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("LastModified")]
+    public DateTime? LastModified { get; init; }
+
+    /// <summary>
+    /// Indicates if the sample is active
+    /// </summary>
+    [DataMember]
+    [XmlElement("IsActive")]
+    public bool IsActive { get; init; } = true;
+
+    /// <summary>
+    /// Sample priority level
+    /// </summary>
+    [DataMember]
+    [XmlElement("Priority")]
+    [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10")]
+    public int Priority { get; init; } = 5;
+
+    /// <summary>
+    /// Tags associated with the sample
+    /// </summary>
+    [DataMember]
+    [XmlArray("Tags")]
+    [XmlArrayItem("Tag", Type = typeof(string))]
+    public List<string> Tags { get; init; } = [];
+
+    /// <summary>
+    /// Additional properties as key-value pairs
+    /// </summary>
+    [DataMember]
+    [XmlArray("Properties")]
+    [XmlArrayItem("Property", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Properties { get; init; } = [];
+
+    /// <summary>
+    /// Sample source system
+    /// </summary>
+    [DataMember]
+    [XmlElement("Source")]
+    [StringLength(100, ErrorMessage = "Source cannot exceed 100 characters")]
+    public string? Source { get; init; }
+
+    /// <summary>
+    /// Sample version
+    /// </summary>
+    [DataMember]
+    [XmlElement("Version")]
+    [StringLength(20, ErrorMessage = "Version cannot exceed 20 characters")]
+    public string? Version { get; init; }
+
+    /// <summary>
+    /// Validates the sample data item
+    /// </summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = new List<ValidationResult>();
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            results.Add(new ValidationResult("Name cannot be empty or whitespace", [nameof(Name)]));
+        }
+
+        if (Id <= 0)
+        {
+            results.Add(new ValidationResult("Id must be greater than zero", [nameof(Id)]));
+        }
+
+        if (!string.IsNullOrEmpty(DataType) && Value is not null)
+        {
+            var isValidType = DataType.ToLowerInvariant() switch
+            {
+                "string" => Value is string,
+                "int" or "integer" => Value is int,
+                "decimal" or "double" => Value is decimal or double,
+                "bool" or "boolean" => Value is bool,
+                "datetime" => Value is DateTime,
+                _ => true // Allow unknown types
+            };
+
+            if (!isValidType)
+            {
+                results.Add(new ValidationResult($"Value type does not match specified DataType '{DataType}'", [nameof(Value), nameof(DataType)]));
+            }
+        }
+
+        if (Priority < 1 || Priority > 10)
+        {
+            results.Add(new ValidationResult("Priority must be between 1 and 10", [nameof(Priority)]));
+        }
+
+        return results;
+    }
+}
+
+/// <summary>
+/// Individual report data item for report operations
+/// </summary>
+[DataContract]
+[XmlType("ReportDataItem")]
+public record ReportDataItem : IValidatableObject
+{
+    /// <summary>
+    /// Unique identifier for the report item
+    /// </summary>
+    [DataMember]
+    [XmlElement("Id")]
+    [Range(1, int.MaxValue, ErrorMessage = "Id must be a positive number")]
+    public int Id { get; init; }
+
+    /// <summary>
+    /// Report item name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Name is required")]
+    [StringLength(100, ErrorMessage = "Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Report item description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// Report item value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public object? Value { get; init; }
+
+    /// <summary>
+    /// Data type of the report value
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataType")]
+    [StringLength(50, ErrorMessage = "DataType cannot exceed 50 characters")]
+    public string? DataType { get; init; }
+
+    /// <summary>
+    /// Report section this item belongs to
+    /// </summary>
+    [DataMember]
+    [XmlElement("Section")]
+    [StringLength(100, ErrorMessage = "Section cannot exceed 100 characters")]
+    public string? Section { get; init; }
+
+    /// <summary>
+    /// Display order within the section
+    /// </summary>
+    [DataMember]
+    [XmlElement("Order")]
+    [Range(0, int.MaxValue, ErrorMessage = "Order must be non-negative")]
+    public int Order { get; init; }
+
+    /// <summary>
+    /// Report item category
+    /// </summary>
+    [DataMember]
+    [XmlElement("Category")]
+    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Unit of measurement for the value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Unit")]
+    [StringLength(20, ErrorMessage = "Unit cannot exceed 20 characters")]
+    public string? Unit { get; init; }
+
+    /// <summary>
+    /// Formatting instructions for display
+    /// </summary>
+    [DataMember]
+    [XmlElement("Format")]
+    [StringLength(50, ErrorMessage = "Format cannot exceed 50 characters")]
+    public string? Format { get; init; }
+
+    /// <summary>
+    /// Indicates if the item is visible in the report
+    /// </summary>
+    [DataMember]
+    [XmlElement("IsVisible")]
+    public bool IsVisible { get; init; } = true;
+
+    /// <summary>
+    /// Item creation timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("CreatedAt")]
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Data source for this item
+    /// </summary>
+    [DataMember]
+    [XmlElement("DataSource")]
+    [StringLength(100, ErrorMessage = "DataSource cannot exceed 100 characters")]
+    public string? DataSource { get; init; }
+
+    /// <summary>
+    /// Additional metadata for the report item
+    /// </summary>
+    [DataMember]
+    [XmlArray("Metadata")]
+    [XmlArrayItem("Meta", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Metadata { get; init; } = [];
+
+    /// <summary>
+    /// Calculation method if applicable
+    /// </summary>
+    [DataMember]
+    [XmlElement("CalculationMethod")]
+    [StringLength(100, ErrorMessage = "CalculationMethod cannot exceed 100 characters")]
+    public string? CalculationMethod { get; init; }
+
+    /// <summary>
+    /// Validates the report data item
+    /// </summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        var results = new List<ValidationResult>();
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            results.Add(new ValidationResult("Name cannot be empty or whitespace", [nameof(Name)]));
+        }
+
+        if (Id <= 0)
+        {
+            results.Add(new ValidationResult("Id must be greater than zero", [nameof(Id)]));
+        }
+
+        if (!string.IsNullOrEmpty(DataType) && Value is not null)
+        {
+            var isValidType = DataType.ToLowerInvariant() switch
+            {
+                "string" => Value is string,
+                "int" or "integer" => Value is int,
+                "decimal" or "double" => Value is decimal or double,
+                "bool" or "boolean" => Value is bool,
+                "datetime" => Value is DateTime,
+                _ => true // Allow unknown types
+            };
+
+            if (!isValidType)
+            {
+                results.Add(new ValidationResult($"Value type does not match specified DataType '{DataType}'", [nameof(Value), nameof(DataType)]));
+            }
+        }
+
+        if (Order < 0)
+        {
+            results.Add(new ValidationResult("Order must be non-negative", [nameof(Order)]));
+        }
+
+        return results;
+    }
+}
+
+/// <summary>
+/// Report metadata containing additional information about the report
+/// </summary>
+[DataContract]
+[XmlType("ReportMetadata")]
+public record ReportMetadata
+{
     /// <summary>
     /// Report type or category
     /// </summary>
@@ -449,7 +691,7 @@ public record ReportResponseDto : ResponseDto
     /// </summary>
     [DataMember]
     [XmlElement("Description")]
-    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
     public string? Description { get; init; }
 
     /// <summary>
@@ -461,27 +703,18 @@ public record ReportResponseDto : ResponseDto
     public List<KeyValueItem> Parameters { get; init; } = [];
 
     /// <summary>
-    /// Collection of report sections or categories
+    /// Data date range start
     /// </summary>
     [DataMember]
-    [XmlArray("Sections")]
-    [XmlArrayItem("Section", Type = typeof(ReportSection))]
-    public List<ReportSection> Sections { get; init; } = [];
+    [XmlElement("DateRangeStart")]
+    public DateTime? DateRangeStart { get; init; }
 
     /// <summary>
-    /// Report summary information
+    /// Data date range end
     /// </summary>
     [DataMember]
-    [XmlElement("Summary")]
-    public ReportSummary? Summary { get; init; }
-
-    /// <summary>
-    /// Report execution status
-    /// </summary>
-    [DataMember]
-    [XmlElement("ExecutionStatus")]
-    [StringLength(20, ErrorMessage = "ExecutionStatus cannot exceed 20 characters")]
-    public string ExecutionStatus { get; init; } = "Completed";
+    [XmlElement("DateRangeEnd")]
+    public DateTime? DateRangeEnd { get; init; }
 
     /// <summary>
     /// Report file size in bytes if applicable
@@ -492,208 +725,36 @@ public record ReportResponseDto : ResponseDto
     public long? FileSizeBytes { get; init; }
 
     /// <summary>
-    /// Report expiration date
+    /// Source system or service that generated the report
     /// </summary>
     [DataMember]
-    [XmlElement("ExpiresAt")]
-    public DateTime? ExpiresAt { get; init; }
-}
-
-/// <summary>
-/// Represents a section within a report
-/// </summary>
-[DataContract]
-[XmlType("ReportSection")]
-public record ReportSection
-{
-    /// <summary>
-    /// Section identifier
-    /// </summary>
-    [DataMember]
-    [XmlElement("Id")]
-    [Required(ErrorMessage = "Section Id is required")]
-    [StringLength(50, ErrorMessage = "Section Id cannot exceed 50 characters")]
-    public string Id { get; init; } = string.Empty;
+    [XmlElement("Source")]
+    [StringLength(100, ErrorMessage = "Source cannot exceed 100 characters")]
+    public string? Source { get; init; }
 
     /// <summary>
-    /// Section title
+    /// Version of the report format or schema
     /// </summary>
     [DataMember]
-    [XmlElement("Title")]
-    [Required(ErrorMessage = "Section Title is required")]
-    [StringLength(200, ErrorMessage = "Section Title cannot exceed 200 characters")]
-    public string Title { get; init; } = string.Empty;
+    [XmlElement("Version")]
+    [StringLength(20, ErrorMessage = "Version cannot exceed 20 characters")]
+    public string? Version { get; init; }
 
     /// <summary>
-    /// Section description
+    /// Server or instance identifier
     /// </summary>
     [DataMember]
-    [XmlElement("Description")]
-    [StringLength(500, ErrorMessage = "Section Description cannot exceed 500 characters")]
-    public string? Description { get; init; }
+    [XmlElement("ServerId")]
+    [StringLength(50, ErrorMessage = "ServerId cannot exceed 50 characters")]
+    public string? ServerId { get; init; }
 
     /// <summary>
-    /// Section order for display
+    /// Request correlation identifier
     /// </summary>
     [DataMember]
-    [XmlElement("Order")]
-    [Range(0, int.MaxValue, ErrorMessage = "Order must be non-negative")]
-    public int Order { get; init; }
-
-    /// <summary>
-    /// Section type or category
-    /// </summary>
-    [DataMember]
-    [XmlElement("SectionType")]
-    [StringLength(50, ErrorMessage = "SectionType cannot exceed 50 characters")]
-    public string? SectionType { get; init; }
-
-    /// <summary>
-    /// Data items in this section
-    /// </summary>
-    [DataMember]
-    [XmlArray("Data")]
-    [XmlArrayItem("DataItem", Type = typeof(DataItem))]
-    public List<DataItem> Data { get; init; } = [];
-
-    /// <summary>
-    /// Chart or visualization data if applicable
-    /// </summary>
-    [DataMember]
-    [XmlArray("Charts")]
-    [XmlArrayItem("Chart", Type = typeof(ChartData))]
-    public List<ChartData> Charts { get; init; } = [];
-
-    /// <summary>
-    /// Section-specific metadata
-    /// </summary>
-    [DataMember]
-    [XmlArray("Metadata")]
-    [XmlArrayItem("Meta", Type = typeof(KeyValueItem))]
-    public List<KeyValueItem> Metadata { get; init; } = [];
-
-    /// <summary>
-    /// Indicates if the section is visible
-    /// </summary>
-    [DataMember]
-    [XmlElement("IsVisible")]
-    public bool IsVisible { get; init; } = true;
-}
-
-/// <summary>
-/// Chart or visualization data for reports
-/// </summary>
-[DataContract]
-[XmlType("ChartData")]
-public record ChartData
-{
-    /// <summary>
-    /// Chart identifier
-    /// </summary>
-    [DataMember]
-    [XmlElement("Id")]
-    [Required(ErrorMessage = "Chart Id is required")]
-    [StringLength(50, ErrorMessage = "Chart Id cannot exceed 50 characters")]
-    public string Id { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Chart title
-    /// </summary>
-    [DataMember]
-    [XmlElement("Title")]
-    [Required(ErrorMessage = "Chart Title is required")]
-    [StringLength(200, ErrorMessage = "Chart Title cannot exceed 200 characters")]
-    public string Title { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Chart type (Bar, Line, Pie, etc.)
-    /// </summary>
-    [DataMember]
-    [XmlElement("ChartType")]
-    [Required(ErrorMessage = "ChartType is required")]
-    [StringLength(50, ErrorMessage = "ChartType cannot exceed 50 characters")]
-    public string ChartType { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Chart data series
-    /// </summary>
-    [DataMember]
-    [XmlArray("Series")]
-    [XmlArrayItem("DataSeries", Type = typeof(DataSeries))]
-    public List<DataSeries> Series { get; init; } = [];
-
-    /// <summary>
-    /// X-axis labels
-    /// </summary>
-    [DataMember]
-    [XmlArray("XAxisLabels")]
-    [XmlArrayItem("Label", Type = typeof(string))]
-    public List<string> XAxisLabels { get; init; } = [];
-
-    /// <summary>
-    /// Chart configuration options
-    /// </summary>
-    [DataMember]
-    [XmlArray("Options")]
-    [XmlArrayItem("Option", Type = typeof(KeyValueItem))]
-    public List<KeyValueItem> Options { get; init; } = [];
-}
-
-/// <summary>
-/// Data series for chart visualization
-/// </summary>
-[DataContract]
-[XmlType("DataSeries")]
-public record DataSeries
-{
-    /// <summary>
-    /// Series name
-    /// </summary>
-    [DataMember]
-    [XmlElement("Name")]
-    [Required(ErrorMessage = "Series Name is required")]
-    [StringLength(100, ErrorMessage = "Series Name cannot exceed 100 characters")]
-    public string Name { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Series data values
-    /// </summary>
-    [DataMember]
-    [XmlArray("Values")]
-    [XmlArrayItem("Value", Type = typeof(decimal))]
-    public List<decimal> Values { get; init; } = [];
-
-    /// <summary>
-    /// Series color for visualization
-    /// </summary>
-    [DataMember]
-    [XmlElement("Color")]
-    [StringLength(20, ErrorMessage = "Color cannot exceed 20 characters")]
-    public string? Color { get; init; }
-
-    /// <summary>
-    /// Series type (if different from chart type)
-    /// </summary>
-    [DataMember]
-    [XmlElement("SeriesType")]
-    [StringLength(50, ErrorMessage = "SeriesType cannot exceed 50 characters")]
-    public string? SeriesType { get; init; }
-}
-
-/// <summary>
-/// Report summary containing aggregate information
-/// </summary>
-[DataContract]
-[XmlType("ReportSummary")]
-public record ReportSummary
-{
-    /// <summary>
-    /// Total number of records processed
-    /// </summary>
-    [DataMember]
-    [XmlElement("TotalRecords")]
-    [Range(0, int.MaxValue, ErrorMessage = "TotalRecords must be non-negative")]
-    public int TotalRecords { get; init; }
+    [XmlElement("CorrelationId")]
+    [StringLength(100, ErrorMessage = "CorrelationId cannot exceed 100 characters")]
+    public string? CorrelationId { get; init; }
 
     /// <summary>
     /// Number of successful operations
@@ -744,24 +805,48 @@ public record ReportSummary
     public List<MetricItem> Metrics { get; init; } = [];
 
     /// <summary>
-    /// Summary statistics
+    /// Additional metadata as key-value pairs
     /// </summary>
     [DataMember]
-    [XmlArray("Statistics")]
-    [XmlArrayItem("Statistic", Type = typeof(StatisticItem))]
-    public List<StatisticItem> Statistics { get; init; } = [];
-
-    /// <summary>
-    /// Overall completion percentage
-    /// </summary>
-    [DataMember]
-    [XmlElement("CompletionPercentage")]
-    [Range(0.0, 100.0, ErrorMessage = "CompletionPercentage must be between 0 and 100")]
-    public decimal CompletionPercentage { get; init; }
+    [XmlArray("AdditionalData")]
+    [XmlArrayItem("Data", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> AdditionalData { get; init; } = [];
 }
 
 /// <summary>
-/// Metric item for report summaries
+/// Key-value pair item for flexible property storage
+/// </summary>
+[DataContract]
+[XmlType("KeyValueItem")]
+public record KeyValueItem
+{
+    /// <summary>
+    /// Property key
+    /// </summary>
+    [DataMember]
+    [XmlElement("Key")]
+    [Required(ErrorMessage = "Key is required")]
+    [StringLength(100, ErrorMessage = "Key cannot exceed 100 characters")]
+    public string Key { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Property value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public object? Value { get; init; }
+
+    /// <summary>
+    /// Value type for serialization purposes
+    /// </summary>
+    [DataMember]
+    [XmlElement("ValueType")]
+    [StringLength(50, ErrorMessage = "ValueType cannot exceed 50 characters")]
+    public string? ValueType { get; init; }
+}
+
+/// <summary>
+/// Metric item for report metadata
 /// </summary>
 [DataContract]
 [XmlType("MetricItem")]
@@ -798,33 +883,9 @@ public record MetricItem
     [XmlElement("Description")]
     [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
     public string? Description { get; init; }
-}
-
-/// <summary>
-/// Statistic item for report summaries
-/// </summary>
-[DataContract]
-[XmlType("StatisticItem")]
-public record StatisticItem
-{
-    /// <summary>
-    /// Statistic name
-    /// </summary>
-    [DataMember]
-    [XmlElement("Name")]
-    [Required(ErrorMessage = "Statistic Name is required")]
-    [StringLength(100, ErrorMessage = "Statistic Name cannot exceed 100 characters")]
-    public string Name { get; init; } = string.Empty;
 
     /// <summary>
-    /// Statistic value
-    /// </summary>
-    [DataMember]
-    [XmlElement("Value")]
-    public decimal Value { get; init; }
-
-    /// <summary>
-    /// Statistic category
+    /// Metric category
     /// </summary>
     [DataMember]
     [XmlElement("Category")]

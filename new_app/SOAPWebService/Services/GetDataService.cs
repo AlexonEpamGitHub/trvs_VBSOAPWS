@@ -54,6 +54,28 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Returns a simple "Hello World" greeting synchronously for legacy compatibility
+        /// </summary>
+        /// <returns>A greeting string</returns>
+        public string HelloWorld()
+        {
+            _logger.LogInformation("HelloWorld method called at {Timestamp}", DateTime.UtcNow);
+            
+            try
+            {
+                const string result = "Hello World";
+                _logger.LogInformation("HelloWorld method completed successfully");
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in HelloWorld");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Returns personalized greeting data asynchronously
         /// </summary>
         /// <param name="name">The name to include in the greeting</param>
@@ -95,11 +117,41 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Returns personalized greeting data synchronously for legacy compatibility
+        /// </summary>
+        /// <param name="name">The name to include in the greeting</param>
+        /// <returns>A personalized greeting string</returns>
+        public string GetData(string name)
+        {
+            _logger.LogInformation("GetData method called with name: {Name} at {Timestamp}", 
+                name ?? "null", DateTime.UtcNow);
+            
+            try
+            {
+                var result = string.IsNullOrWhiteSpace(name) switch
+                {
+                    true => "Hello Guest, this is a modern SOAP web service response.",
+                    false => $"Hello {name.Trim()}, this is a modern SOAP web service response."
+                };
+                
+                _logger.LogInformation("GetData method completed successfully for name: {Name}", 
+                    name ?? "null");
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetData for name: {Name}", name ?? "null");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Retrieves sample data set asynchronously using modern DTO pattern
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains response DTO with sample data.</returns>
-        public async Task<ResponseDto> GetDataSetAsync(CancellationToken cancellationToken = default)
+        public async Task<SampleDataResponse> GetDataSetAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("GetDataSetAsync method called at {Timestamp}", DateTime.UtcNow);
             
@@ -112,15 +164,13 @@ namespace SOAPWebService.Services
                 
                 var dataItems = await GenerateSampleDataAsync(cancellationToken);
                 
-                var response = new ResponseDto
-                {
-                    Success = true,
-                    Message = "Data retrieved successfully using modern patterns",
-                    Data = dataItems,
-                    Timestamp = DateTime.UtcNow,
-                    TotalCount = dataItems.Count,
-                    Version = "2.0"
-                };
+                var response = ResponseDtoFactory.CreateSampleDataResponse();
+                response.Success = true;
+                response.Message = "Data retrieved successfully using modern patterns";
+                response.Data = dataItems;
+                response.Timestamp = DateTime.UtcNow;
+                response.TotalCount = dataItems.Count;
+                response.Version = "2.0";
                 
                 _logger.LogInformation("GetDataSetAsync completed successfully with {ItemCount} items", 
                     dataItems.Count);
@@ -136,15 +186,56 @@ namespace SOAPWebService.Services
             {
                 _logger.LogError(ex, "Error occurred while retrieving data set");
                 
-                return new ResponseDto
-                {
-                    Success = false,
-                    Message = $"Error retrieving data: {ex.Message}",
-                    Data = [],
-                    Timestamp = DateTime.UtcNow,
-                    TotalCount = 0,
-                    Version = "2.0"
-                };
+                var errorResponse = ResponseDtoFactory.CreateSampleDataResponse();
+                errorResponse.Success = false;
+                errorResponse.Message = $"Error retrieving data: {ex.Message}";
+                errorResponse.Data = [];
+                errorResponse.Timestamp = DateTime.UtcNow;
+                errorResponse.TotalCount = 0;
+                errorResponse.Version = "2.0";
+                
+                return errorResponse;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves sample data set synchronously for legacy compatibility
+        /// </summary>
+        /// <returns>Response DTO with sample data</returns>
+        public SampleDataResponse GetDataSet()
+        {
+            _logger.LogInformation("GetDataSet method called at {Timestamp}", DateTime.UtcNow);
+            
+            try
+            {
+                var dataItems = GenerateSampleData();
+                
+                var response = ResponseDtoFactory.CreateSampleDataResponse();
+                response.Success = true;
+                response.Message = "Data retrieved successfully using modern patterns";
+                response.Data = dataItems;
+                response.Timestamp = DateTime.UtcNow;
+                response.TotalCount = dataItems.Count;
+                response.Version = "2.0";
+                
+                _logger.LogInformation("GetDataSet completed successfully with {ItemCount} items", 
+                    dataItems.Count);
+                
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving data set");
+                
+                var errorResponse = ResponseDtoFactory.CreateSampleDataResponse();
+                errorResponse.Success = false;
+                errorResponse.Message = $"Error retrieving data: {ex.Message}";
+                errorResponse.Data = [];
+                errorResponse.Timestamp = DateTime.UtcNow;
+                errorResponse.TotalCount = 0;
+                errorResponse.Version = "2.0";
+                
+                return errorResponse;
             }
         }
 
@@ -155,7 +246,7 @@ namespace SOAPWebService.Services
         /// <param name="cancellationToken">Cancellation token to cancel the operation</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains report response DTO with report data.</returns>
         /// <exception cref="ArgumentNullException">Thrown when reportInput is null</exception>
-        public async Task<ReportResponseDto> GetReportAsync(ReportInput reportInput, CancellationToken cancellationToken = default)
+        public async Task<ReportDataResponse> GetReportAsync(ReportInput reportInput, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(reportInput, nameof(reportInput));
             
@@ -171,7 +262,7 @@ namespace SOAPWebService.Services
                 if (!validationResult.IsValid)
                 {
                     _logger.LogWarning("Invalid report input: {ValidationMessage}", validationResult.Message);
-                    return CreateErrorReportResponse(reportInput.ReportName, validationResult.Message);
+                    return CreateErrorReportDataResponse(reportInput.ReportName, validationResult.Message);
                 }
                 
                 _logger.LogInformation("Processing report request for: {ReportName}", reportInput.ReportName);
@@ -183,19 +274,17 @@ namespace SOAPWebService.Services
                 var reportData = await GenerateAdvancedReportDataAsync(reportInput, cancellationToken);
                 var reportMetadata = await GenerateReportMetadataAsync(reportInput, reportData, cancellationToken);
                 
-                var response = new ReportResponseDto
-                {
-                    Success = true,
-                    Message = $"Report '{reportInput.ReportName}' generated successfully using modern patterns",
-                    ReportName = reportInput.ReportName,
-                    Data = reportData,
-                    Metadata = reportMetadata,
-                    GeneratedAt = DateTime.UtcNow,
-                    TotalCount = reportData.Count,
-                    Version = "2.0",
-                    ExecutionTimeMs = 100,
-                    Parameters = reportInput.Parameters?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>()
-                };
+                var response = ResponseDtoFactory.CreateReportDataResponse(reportInput.ReportName);
+                response.Success = true;
+                response.Message = $"Report '{reportInput.ReportName}' generated successfully using modern patterns";
+                response.ReportName = reportInput.ReportName;
+                response.Data = reportData;
+                response.Metadata = reportMetadata;
+                response.GeneratedAt = DateTime.UtcNow;
+                response.TotalCount = reportData.Count;
+                response.Version = "2.0";
+                response.ExecutionTimeMs = 100;
+                response.Parameters = reportInput.Parameters?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>();
                 
                 _logger.LogInformation("GetReportAsync completed successfully for ReportName: {ReportName} with {ItemCount} items, ExecutionTime: {ExecutionTime}ms", 
                     reportInput.ReportName, reportData.Count, response.ExecutionTimeMs);
@@ -213,7 +302,62 @@ namespace SOAPWebService.Services
                 _logger.LogError(ex, "Error occurred while generating report for ReportName: {ReportName}", 
                     reportInput.ReportName);
                 
-                return CreateErrorReportResponse(reportInput.ReportName, ex.Message);
+                return CreateErrorReportDataResponse(reportInput.ReportName, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Generates comprehensive report data synchronously for legacy compatibility
+        /// </summary>
+        /// <param name="reportInput">The report input parameters containing report configuration</param>
+        /// <returns>Report response DTO with report data</returns>
+        /// <exception cref="ArgumentNullException">Thrown when reportInput is null</exception>
+        public ReportDataResponse GetReport(ReportInput reportInput)
+        {
+            ArgumentNullException.ThrowIfNull(reportInput, nameof(reportInput));
+            
+            _logger.LogInformation("GetReport method called with ReportName: {ReportName}, Parameters: {@Parameters} at {Timestamp}", 
+                reportInput.ReportName, reportInput.Parameters, DateTime.UtcNow);
+            
+            try
+            {
+                // Validate report input
+                var validationResult = ValidateReportInput(reportInput);
+                if (!validationResult.IsValid)
+                {
+                    _logger.LogWarning("Invalid report input: {ValidationMessage}", validationResult.Message);
+                    return CreateErrorReportDataResponse(reportInput.ReportName, validationResult.Message);
+                }
+                
+                _logger.LogInformation("Processing report request for: {ReportName}", reportInput.ReportName);
+                
+                // Generate comprehensive report data based on input
+                var reportData = GenerateAdvancedReportData(reportInput);
+                var reportMetadata = GenerateReportMetadata(reportInput, reportData);
+                
+                var response = ResponseDtoFactory.CreateReportDataResponse(reportInput.ReportName);
+                response.Success = true;
+                response.Message = $"Report '{reportInput.ReportName}' generated successfully using modern patterns";
+                response.ReportName = reportInput.ReportName;
+                response.Data = reportData;
+                response.Metadata = reportMetadata;
+                response.GeneratedAt = DateTime.UtcNow;
+                response.TotalCount = reportData.Count;
+                response.Version = "2.0";
+                response.ExecutionTimeMs = 100;
+                response.Parameters = reportInput.Parameters?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object>();
+                
+                _logger.LogInformation("GetReport completed successfully for ReportName: {ReportName} with {ItemCount} items, ExecutionTime: {ExecutionTime}ms", 
+                    reportInput.ReportName, reportData.Count, response.ExecutionTimeMs);
+                
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while generating report for ReportName: {ReportName}", 
+                    reportInput.ReportName);
+                
+                return CreateErrorReportDataResponse(reportInput.ReportName, ex.Message);
             }
         }
 
@@ -226,6 +370,44 @@ namespace SOAPWebService.Services
         {
             await Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken);
             
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Alice Johnson", 
+                    Description = "Senior Developer - Full Stack", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-30),
+                    Status = "Active",
+                    Category = "Employee"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "Bob Smith", 
+                    Description = "Product Manager - Analytics", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-15),
+                    Status = "Active",
+                    Category = "Employee"
+                },
+                new DataItem 
+                { 
+                    Id = 3, 
+                    Name = "Charlie Brown", 
+                    Description = "DevOps Engineer - Cloud Infrastructure", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-5),
+                    Status = "Active",
+                    Category = "Employee"
+                }
+            ];
+        }
+
+        /// <summary>
+        /// Generates sample data items synchronously
+        /// </summary>
+        /// <returns>A list of data items</returns>
+        private List<DataItem> GenerateSampleData()
+        {
             return
             [
                 new DataItem 
@@ -281,12 +463,77 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Generates advanced report data based on the report input parameters synchronously
+        /// </summary>
+        /// <param name="reportInput">The report input parameters</param>
+        /// <returns>A list of data items</returns>
+        private List<DataItem> GenerateAdvancedReportData(ReportInput reportInput)
+        {
+            var reportData = reportInput.ReportName?.ToLowerInvariant() switch
+            {
+                "users" or "employees" => GenerateUserReportData(reportInput),
+                "sales" or "revenue" => GenerateSalesReportData(reportInput),
+                "analytics" or "metrics" => GenerateAnalyticsReportData(reportInput),
+                "inventory" or "products" => GenerateInventoryReportData(reportInput),
+                _ => GenerateDefaultReportData(reportInput)
+            };
+            
+            return reportData;
+        }
+
+        /// <summary>
         /// Generates user-specific report data
         /// </summary>
         private async Task<List<DataItem>> GenerateUserReportDataAsync(ReportInput reportInput, CancellationToken cancellationToken)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(20), cancellationToken);
             
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Alice Johnson", 
+                    Description = "Senior Developer - 5 years experience", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-1825),
+                    Status = "Active",
+                    Category = "Senior"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "Bob Smith", 
+                    Description = "Product Manager - 3 years experience", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-1095),
+                    Status = "Active",
+                    Category = "Mid-Level"
+                },
+                new DataItem 
+                { 
+                    Id = 3, 
+                    Name = "Charlie Brown", 
+                    Description = "Junior Developer - 1 year experience", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-365),
+                    Status = "Active",
+                    Category = "Junior"
+                },
+                new DataItem 
+                { 
+                    Id = 4, 
+                    Name = "Diana Prince", 
+                    Description = "Team Lead - 7 years experience", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-2555),
+                    Status = "Active",
+                    Category = "Leadership"
+                }
+            ];
+        }
+
+        /// <summary>
+        /// Generates user-specific report data synchronously
+        /// </summary>
+        private List<DataItem> GenerateUserReportData(ReportInput reportInput)
+        {
             return
             [
                 new DataItem 
@@ -368,12 +615,86 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Generates sales-specific report data synchronously
+        /// </summary>
+        private List<DataItem> GenerateSalesReportData(ReportInput reportInput)
+        {
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Q1 2024 Sales", 
+                    Description = "Revenue: $125,000 | Growth: +15%", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-90),
+                    Status = "Completed",
+                    Category = "Quarterly"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "Q2 2024 Sales", 
+                    Description = "Revenue: $145,000 | Growth: +16%", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-60),
+                    Status = "Completed",
+                    Category = "Quarterly"
+                },
+                new DataItem 
+                { 
+                    Id = 3, 
+                    Name = "Q3 2024 Sales", 
+                    Description = "Revenue: $155,000 | Growth: +7%", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-30),
+                    Status = "In Progress",
+                    Category = "Quarterly"
+                }
+            ];
+        }
+
+        /// <summary>
         /// Generates analytics-specific report data
         /// </summary>
         private async Task<List<DataItem>> GenerateAnalyticsReportDataAsync(ReportInput reportInput, CancellationToken cancellationToken)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(20), cancellationToken);
             
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Website Traffic", 
+                    Description = "Monthly Visitors: 45,000 | Bounce Rate: 35%", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-30),
+                    Status = "Current",
+                    Category = "Web Analytics"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "User Engagement", 
+                    Description = "Avg Session: 4m 32s | Pages per Session: 3.2", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-15),
+                    Status = "Current",
+                    Category = "User Metrics"
+                },
+                new DataItem 
+                { 
+                    Id = 3, 
+                    Name = "Conversion Rate", 
+                    Description = "Rate: 3.8% | Conversions: 1,710", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-7),
+                    Status = "Current",
+                    Category = "Conversion"
+                }
+            ];
+        }
+
+        /// <summary>
+        /// Generates analytics-specific report data synchronously
+        /// </summary>
+        private List<DataItem> GenerateAnalyticsReportData(ReportInput reportInput)
+        {
             return
             [
                 new DataItem 
@@ -446,12 +767,77 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Generates inventory-specific report data synchronously
+        /// </summary>
+        private List<DataItem> GenerateInventoryReportData(ReportInput reportInput)
+        {
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Product A", 
+                    Description = "Stock: 150 units | Value: $15,000", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-60),
+                    Status = "In Stock",
+                    Category = "Electronics"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "Product B", 
+                    Description = "Stock: 75 units | Value: $22,500", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-45),
+                    Status = "Low Stock",
+                    Category = "Accessories"
+                },
+                new DataItem 
+                { 
+                    Id = 3, 
+                    Name = "Product C", 
+                    Description = "Stock: 200 units | Value: $8,000", 
+                    CreatedDate = DateTime.UtcNow.AddDays(-30),
+                    Status = "In Stock",
+                    Category = "Consumables"
+                }
+            ];
+        }
+
+        /// <summary>
         /// Generates default report data for unknown report types
         /// </summary>
         private async Task<List<DataItem>> GenerateDefaultReportDataAsync(ReportInput reportInput, CancellationToken cancellationToken)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(15), cancellationToken);
             
+            return
+            [
+                new DataItem 
+                { 
+                    Id = 1, 
+                    Name = "Default Report Item 1", 
+                    Description = $"Generated for report: {reportInput.ReportName} | Type: Generic", 
+                    CreatedDate = DateTime.UtcNow,
+                    Status = "Generated",
+                    Category = "Default"
+                },
+                new DataItem 
+                { 
+                    Id = 2, 
+                    Name = "Default Report Item 2", 
+                    Description = $"Generated for report: {reportInput.ReportName} | Type: Sample", 
+                    CreatedDate = DateTime.UtcNow,
+                    Status = "Generated",
+                    Category = "Default"
+                }
+            ];
+        }
+
+        /// <summary>
+        /// Generates default report data for unknown report types synchronously
+        /// </summary>
+        private List<DataItem> GenerateDefaultReportData(ReportInput reportInput)
+        {
             return
             [
                 new DataItem 
@@ -509,6 +895,37 @@ namespace SOAPWebService.Services
         }
 
         /// <summary>
+        /// Generates comprehensive report metadata synchronously
+        /// </summary>
+        private ReportMetadata GenerateReportMetadata(ReportInput reportInput, List<DataItem> data)
+        {
+            return new ReportMetadata
+            {
+                ReportType = reportInput.ReportName?.ToLowerInvariant() switch
+                {
+                    "users" or "employees" => "User Management",
+                    "sales" or "revenue" => "Financial",
+                    "analytics" or "metrics" => "Analytics",
+                    "inventory" or "products" => "Inventory",
+                    _ => "General"
+                },
+                Categories = data.GroupBy(d => d.Category).Select(g => g.Key).ToList(),
+                DateRange = new DateRange
+                {
+                    StartDate = data.Min(d => d.CreatedDate),
+                    EndDate = data.Max(d => d.CreatedDate)
+                },
+                Summary = new Dictionary<string, object>
+                {
+                    ["TotalItems"] = data.Count,
+                    ["ActiveItems"] = data.Count(d => d.Status == "Active" || d.Status == "Current" || d.Status == "In Stock"),
+                    ["UniqueCategories"] = data.Select(d => d.Category).Distinct().Count(),
+                    ["AverageAge"] = data.Average(d => (DateTime.UtcNow - d.CreatedDate).TotalDays)
+                }
+            };
+        }
+
+        /// <summary>
         /// Validates report input parameters
         /// </summary>
         private static ValidationResult ValidateReportInput(ReportInput reportInput)
@@ -529,27 +946,27 @@ namespace SOAPWebService.Services
         /// <summary>
         /// Creates an error report response
         /// </summary>
-        private static ReportResponseDto CreateErrorReportResponse(string reportName, string errorMessage)
+        private static ReportDataResponse CreateErrorReportDataResponse(string? reportName, string errorMessage)
         {
-            return new ReportResponseDto
+            var errorResponse = ResponseDtoFactory.CreateReportDataResponse(reportName);
+            errorResponse.Success = false;
+            errorResponse.Message = $"Error generating report '{reportName}': {errorMessage}";
+            errorResponse.ReportName = reportName;
+            errorResponse.Data = [];
+            errorResponse.Metadata = new ReportMetadata
             {
-                Success = false,
-                Message = $"Error generating report '{reportName}': {errorMessage}",
-                ReportName = reportName,
-                Data = [],
-                Metadata = new ReportMetadata
-                {
-                    ReportType = "Error",
-                    Categories = [],
-                    DateRange = new DateRange { StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow },
-                    Summary = new Dictionary<string, object> { ["Error"] = errorMessage }
-                },
-                GeneratedAt = DateTime.UtcNow,
-                TotalCount = 0,
-                Version = "2.0",
-                ExecutionTimeMs = 0,
-                Parameters = new Dictionary<string, object>()
+                ReportType = "Error",
+                Categories = [],
+                DateRange = new DateRange { StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow },
+                Summary = new Dictionary<string, object> { ["Error"] = errorMessage }
             };
+            errorResponse.GeneratedAt = DateTime.UtcNow;
+            errorResponse.TotalCount = 0;
+            errorResponse.Version = "2.0";
+            errorResponse.ExecutionTimeMs = 0;
+            errorResponse.Parameters = new Dictionary<string, object>();
+            
+            return errorResponse;
         }
 
         /// <summary>

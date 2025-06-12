@@ -1,4 +1,13 @@
 {
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:57114",
+      "sslPort": 44362
+    }
+  },
   "profiles": {
     "http": {
       "commandName": "Project",
@@ -6,6 +15,24 @@
       "launchBrowser": true,
       "launchUrl": "DataService.asmx",
       "applicationUrl": "http://localhost:57114",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "DataService.asmx",
+      "applicationUrl": "https://localhost:7114;http://localhost:57114",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "DataService.asmx",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

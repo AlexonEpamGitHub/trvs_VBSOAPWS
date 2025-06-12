@@ -1,12 +1,11 @@
-# .NET 8 SOAP Web Service Migration
+# Migration Project
 
-This directory contains the migrated SOAP Web Service application, moved from VB.NET on .NET Framework 4.5.2 to C# on .NET 8.
+This directory contains the migrated .NET 8 version of the SOAP Web Service.
 
-## Project Structure
+## Structure
 
-- `SOAPWebServicesSimpleCore/` - The main project directory
-  - Contains the migrated C# SOAP Web Service
-  - Uses SoapCore library instead of System.Web.Services
+- SOAPWebServicesSimpleCore/ - Contains the migrated .NET 8 C# application
+  - appsettings.json - Configuration settings (replaces Web.config)
 
 ## Key Improvements
 

@@ -15,7 +15,8 @@ public record ResponseDto : IValidatableObject
     /// Collection of data items
     /// </summary>
     [DataMember]
-    [XmlElement("Items")]
+    [XmlArray("Items")]
+    [XmlArrayItem("DataItem", Type = typeof(DataItem))]
     public List<DataItem> Items { get; init; } = [];
 
     /// <summary>
@@ -48,6 +49,22 @@ public record ResponseDto : IValidatableObject
     public ResponseMetadata? Metadata { get; init; }
 
     /// <summary>
+    /// Collection of validation errors if any occurred
+    /// </summary>
+    [DataMember]
+    [XmlArray("ValidationErrors")]
+    [XmlArrayItem("Error", Type = typeof(string))]
+    public List<string> ValidationErrors { get; init; } = [];
+
+    /// <summary>
+    /// Operation identifier for tracking
+    /// </summary>
+    [DataMember]
+    [XmlElement("OperationId")]
+    [StringLength(50, ErrorMessage = "OperationId cannot exceed 50 characters")]
+    public string? OperationId { get; init; }
+
+    /// <summary>
     /// Validates the response object
     /// </summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -74,6 +91,11 @@ public record ResponseDto : IValidatableObject
                     ));
                 }
             }
+        }
+
+        if (!string.IsNullOrEmpty(OperationId) && OperationId.Length > 50)
+        {
+            results.Add(new ValidationResult("OperationId cannot exceed 50 characters", [nameof(OperationId)]));
         }
         
         return results;
@@ -142,11 +164,51 @@ public record DataItem : IValidatableObject
     public bool IsActive { get; init; } = true;
 
     /// <summary>
+    /// Item category or classification
+    /// </summary>
+    [DataMember]
+    [XmlElement("Category")]
+    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Item priority level
+    /// </summary>
+    [DataMember]
+    [XmlElement("Priority")]
+    [Range(1, 10, ErrorMessage = "Priority must be between 1 and 10")]
+    public int Priority { get; init; } = 5;
+
+    /// <summary>
+    /// Last modified timestamp
+    /// </summary>
+    [DataMember]
+    [XmlElement("LastModified")]
+    public DateTime? LastModified { get; init; }
+
+    /// <summary>
+    /// User who last modified the item
+    /// </summary>
+    [DataMember]
+    [XmlElement("ModifiedBy")]
+    [StringLength(100, ErrorMessage = "ModifiedBy cannot exceed 100 characters")]
+    public string? ModifiedBy { get; init; }
+
+    /// <summary>
     /// Additional properties as key-value pairs
     /// </summary>
     [DataMember]
-    [XmlElement("Properties")]
-    public Dictionary<string, object?> Properties { get; init; } = [];
+    [XmlArray("Properties")]
+    [XmlArrayItem("Property", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Properties { get; init; } = [];
+
+    /// <summary>
+    /// Tags associated with the item
+    /// </summary>
+    [DataMember]
+    [XmlArray("Tags")]
+    [XmlArrayItem("Tag", Type = typeof(string))]
+    public List<string> Tags { get; init; } = [];
 
     /// <summary>
     /// Validates the data item
@@ -182,9 +244,46 @@ public record DataItem : IValidatableObject
                 results.Add(new ValidationResult($"Value type does not match specified DataType '{DataType}'", [nameof(Value), nameof(DataType)]));
             }
         }
+
+        if (Priority < 1 || Priority > 10)
+        {
+            results.Add(new ValidationResult("Priority must be between 1 and 10", [nameof(Priority)]));
+        }
         
         return results;
     }
+}
+
+/// <summary>
+/// Key-value pair item for flexible property storage
+/// </summary>
+[DataContract]
+[XmlType("KeyValueItem")]
+public record KeyValueItem
+{
+    /// <summary>
+    /// Property key
+    /// </summary>
+    [DataMember]
+    [XmlElement("Key")]
+    [Required(ErrorMessage = "Key is required")]
+    [StringLength(100, ErrorMessage = "Key cannot exceed 100 characters")]
+    public string Key { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Property value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public object? Value { get; init; }
+
+    /// <summary>
+    /// Value type for serialization purposes
+    /// </summary>
+    [DataMember]
+    [XmlElement("ValueType")]
+    [StringLength(50, ErrorMessage = "ValueType cannot exceed 50 characters")]
+    public string? ValueType { get; init; }
 }
 
 /// <summary>
@@ -265,11 +364,28 @@ public record ResponseMetadata
     public string? Version { get; init; }
 
     /// <summary>
+    /// Server or instance identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("ServerId")]
+    [StringLength(50, ErrorMessage = "ServerId cannot exceed 50 characters")]
+    public string? ServerId { get; init; }
+
+    /// <summary>
+    /// Request correlation identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("CorrelationId")]
+    [StringLength(100, ErrorMessage = "CorrelationId cannot exceed 100 characters")]
+    public string? CorrelationId { get; init; }
+
+    /// <summary>
     /// Additional metadata as key-value pairs
     /// </summary>
     [DataMember]
-    [XmlElement("AdditionalData")]
-    public Dictionary<string, object?> AdditionalData { get; init; } = [];
+    [XmlArray("AdditionalData")]
+    [XmlArrayItem("Data", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> AdditionalData { get; init; } = [];
 }
 
 /// <summary>
@@ -321,17 +437,35 @@ public record ReportResponseDto : ResponseDto
     public string? Format { get; init; }
 
     /// <summary>
+    /// Report type or category
+    /// </summary>
+    [DataMember]
+    [XmlElement("ReportType")]
+    [StringLength(50, ErrorMessage = "ReportType cannot exceed 50 characters")]
+    public string? ReportType { get; init; }
+
+    /// <summary>
+    /// Report description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
     /// Report parameters used for generation
     /// </summary>
     [DataMember]
-    [XmlElement("Parameters")]
-    public Dictionary<string, object?> Parameters { get; init; } = [];
+    [XmlArray("Parameters")]
+    [XmlArrayItem("Parameter", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Parameters { get; init; } = [];
 
     /// <summary>
     /// Collection of report sections or categories
     /// </summary>
     [DataMember]
-    [XmlElement("Sections")]
+    [XmlArray("Sections")]
+    [XmlArrayItem("Section", Type = typeof(ReportSection))]
     public List<ReportSection> Sections { get; init; } = [];
 
     /// <summary>
@@ -340,6 +474,29 @@ public record ReportResponseDto : ResponseDto
     [DataMember]
     [XmlElement("Summary")]
     public ReportSummary? Summary { get; init; }
+
+    /// <summary>
+    /// Report execution status
+    /// </summary>
+    [DataMember]
+    [XmlElement("ExecutionStatus")]
+    [StringLength(20, ErrorMessage = "ExecutionStatus cannot exceed 20 characters")]
+    public string ExecutionStatus { get; init; } = "Completed";
+
+    /// <summary>
+    /// Report file size in bytes if applicable
+    /// </summary>
+    [DataMember]
+    [XmlElement("FileSizeBytes")]
+    [Range(0, long.MaxValue, ErrorMessage = "FileSizeBytes must be non-negative")]
+    public long? FileSizeBytes { get; init; }
+
+    /// <summary>
+    /// Report expiration date
+    /// </summary>
+    [DataMember]
+    [XmlElement("ExpiresAt")]
+    public DateTime? ExpiresAt { get; init; }
 }
 
 /// <summary>
@@ -368,6 +525,14 @@ public record ReportSection
     public string Title { get; init; } = string.Empty;
 
     /// <summary>
+    /// Section description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(500, ErrorMessage = "Section Description cannot exceed 500 characters")]
+    public string? Description { get; init; }
+
+    /// <summary>
     /// Section order for display
     /// </summary>
     [DataMember]
@@ -376,18 +541,143 @@ public record ReportSection
     public int Order { get; init; }
 
     /// <summary>
+    /// Section type or category
+    /// </summary>
+    [DataMember]
+    [XmlElement("SectionType")]
+    [StringLength(50, ErrorMessage = "SectionType cannot exceed 50 characters")]
+    public string? SectionType { get; init; }
+
+    /// <summary>
     /// Data items in this section
     /// </summary>
     [DataMember]
-    [XmlElement("Data")]
+    [XmlArray("Data")]
+    [XmlArrayItem("DataItem", Type = typeof(DataItem))]
     public List<DataItem> Data { get; init; } = [];
+
+    /// <summary>
+    /// Chart or visualization data if applicable
+    /// </summary>
+    [DataMember]
+    [XmlArray("Charts")]
+    [XmlArrayItem("Chart", Type = typeof(ChartData))]
+    public List<ChartData> Charts { get; init; } = [];
 
     /// <summary>
     /// Section-specific metadata
     /// </summary>
     [DataMember]
-    [XmlElement("Metadata")]
-    public Dictionary<string, object?> Metadata { get; init; } = [];
+    [XmlArray("Metadata")]
+    [XmlArrayItem("Meta", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Metadata { get; init; } = [];
+
+    /// <summary>
+    /// Indicates if the section is visible
+    /// </summary>
+    [DataMember]
+    [XmlElement("IsVisible")]
+    public bool IsVisible { get; init; } = true;
+}
+
+/// <summary>
+/// Chart or visualization data for reports
+/// </summary>
+[DataContract]
+[XmlType("ChartData")]
+public record ChartData
+{
+    /// <summary>
+    /// Chart identifier
+    /// </summary>
+    [DataMember]
+    [XmlElement("Id")]
+    [Required(ErrorMessage = "Chart Id is required")]
+    [StringLength(50, ErrorMessage = "Chart Id cannot exceed 50 characters")]
+    public string Id { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Chart title
+    /// </summary>
+    [DataMember]
+    [XmlElement("Title")]
+    [Required(ErrorMessage = "Chart Title is required")]
+    [StringLength(200, ErrorMessage = "Chart Title cannot exceed 200 characters")]
+    public string Title { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Chart type (Bar, Line, Pie, etc.)
+    /// </summary>
+    [DataMember]
+    [XmlElement("ChartType")]
+    [Required(ErrorMessage = "ChartType is required")]
+    [StringLength(50, ErrorMessage = "ChartType cannot exceed 50 characters")]
+    public string ChartType { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Chart data series
+    /// </summary>
+    [DataMember]
+    [XmlArray("Series")]
+    [XmlArrayItem("DataSeries", Type = typeof(DataSeries))]
+    public List<DataSeries> Series { get; init; } = [];
+
+    /// <summary>
+    /// X-axis labels
+    /// </summary>
+    [DataMember]
+    [XmlArray("XAxisLabels")]
+    [XmlArrayItem("Label", Type = typeof(string))]
+    public List<string> XAxisLabels { get; init; } = [];
+
+    /// <summary>
+    /// Chart configuration options
+    /// </summary>
+    [DataMember]
+    [XmlArray("Options")]
+    [XmlArrayItem("Option", Type = typeof(KeyValueItem))]
+    public List<KeyValueItem> Options { get; init; } = [];
+}
+
+/// <summary>
+/// Data series for chart visualization
+/// </summary>
+[DataContract]
+[XmlType("DataSeries")]
+public record DataSeries
+{
+    /// <summary>
+    /// Series name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Series Name is required")]
+    [StringLength(100, ErrorMessage = "Series Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Series data values
+    /// </summary>
+    [DataMember]
+    [XmlArray("Values")]
+    [XmlArrayItem("Value", Type = typeof(decimal))]
+    public List<decimal> Values { get; init; } = [];
+
+    /// <summary>
+    /// Series color for visualization
+    /// </summary>
+    [DataMember]
+    [XmlElement("Color")]
+    [StringLength(20, ErrorMessage = "Color cannot exceed 20 characters")]
+    public string? Color { get; init; }
+
+    /// <summary>
+    /// Series type (if different from chart type)
+    /// </summary>
+    [DataMember]
+    [XmlElement("SeriesType")]
+    [StringLength(50, ErrorMessage = "SeriesType cannot exceed 50 characters")]
+    public string? SeriesType { get; init; }
 }
 
 /// <summary>
@@ -422,23 +712,130 @@ public record ReportSummary
     public int ErrorCount { get; init; }
 
     /// <summary>
+    /// Number of warnings encountered
+    /// </summary>
+    [DataMember]
+    [XmlElement("WarningCount")]
+    [Range(0, int.MaxValue, ErrorMessage = "WarningCount must be non-negative")]
+    public int WarningCount { get; init; }
+
+    /// <summary>
     /// Collection of warnings encountered during processing
     /// </summary>
     [DataMember]
-    [XmlElement("Warnings")]
+    [XmlArray("Warnings")]
+    [XmlArrayItem("Warning", Type = typeof(string))]
     public List<string> Warnings { get; init; } = [];
 
     /// <summary>
     /// Collection of errors encountered during processing
     /// </summary>
     [DataMember]
-    [XmlElement("Errors")]
+    [XmlArray("Errors")]
+    [XmlArrayItem("Error", Type = typeof(string))]
     public List<string> Errors { get; init; } = [];
 
     /// <summary>
     /// Key performance indicators or metrics
     /// </summary>
     [DataMember]
-    [XmlElement("Metrics")]
-    public Dictionary<string, decimal> Metrics { get; init; } = [];
+    [XmlArray("Metrics")]
+    [XmlArrayItem("Metric", Type = typeof(MetricItem))]
+    public List<MetricItem> Metrics { get; init; } = [];
+
+    /// <summary>
+    /// Summary statistics
+    /// </summary>
+    [DataMember]
+    [XmlArray("Statistics")]
+    [XmlArrayItem("Statistic", Type = typeof(StatisticItem))]
+    public List<StatisticItem> Statistics { get; init; } = [];
+
+    /// <summary>
+    /// Overall completion percentage
+    /// </summary>
+    [DataMember]
+    [XmlElement("CompletionPercentage")]
+    [Range(0.0, 100.0, ErrorMessage = "CompletionPercentage must be between 0 and 100")]
+    public decimal CompletionPercentage { get; init; }
+}
+
+/// <summary>
+/// Metric item for report summaries
+/// </summary>
+[DataContract]
+[XmlType("MetricItem")]
+public record MetricItem
+{
+    /// <summary>
+    /// Metric name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Metric Name is required")]
+    [StringLength(100, ErrorMessage = "Metric Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Metric value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public decimal Value { get; init; }
+
+    /// <summary>
+    /// Metric unit of measurement
+    /// </summary>
+    [DataMember]
+    [XmlElement("Unit")]
+    [StringLength(20, ErrorMessage = "Unit cannot exceed 20 characters")]
+    public string? Unit { get; init; }
+
+    /// <summary>
+    /// Metric description
+    /// </summary>
+    [DataMember]
+    [XmlElement("Description")]
+    [StringLength(200, ErrorMessage = "Description cannot exceed 200 characters")]
+    public string? Description { get; init; }
+}
+
+/// <summary>
+/// Statistic item for report summaries
+/// </summary>
+[DataContract]
+[XmlType("StatisticItem")]
+public record StatisticItem
+{
+    /// <summary>
+    /// Statistic name
+    /// </summary>
+    [DataMember]
+    [XmlElement("Name")]
+    [Required(ErrorMessage = "Statistic Name is required")]
+    [StringLength(100, ErrorMessage = "Statistic Name cannot exceed 100 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Statistic value
+    /// </summary>
+    [DataMember]
+    [XmlElement("Value")]
+    public decimal Value { get; init; }
+
+    /// <summary>
+    /// Statistic category
+    /// </summary>
+    [DataMember]
+    [XmlElement("Category")]
+    [StringLength(50, ErrorMessage = "Category cannot exceed 50 characters")]
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Calculation method used
+    /// </summary>
+    [DataMember]
+    [XmlElement("CalculationMethod")]
+    [StringLength(50, ErrorMessage = "CalculationMethod cannot exceed 50 characters")]
+    public string? CalculationMethod { get; init; }
 }

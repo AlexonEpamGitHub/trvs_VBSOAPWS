@@ -1,66 +1,59 @@
 using SoapCore;
 using SOAPWebServicesCore.Services;
+using System.ServiceModel;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging (replaces legacy Global.asax application event handling)
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add services to the container
 builder.Services.AddSoapCore();
 builder.Services.AddScoped<IDataService, DataService>();
 
-// Configure logging (migrated from Web.config compilation debug="true")
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
-
-// Configure Windows authentication (migrated from Web.config authentication mode="Windows")
-builder.Services.AddAuthentication("Windows")
-    .AddNegotiate();
-
-// Configure authorization (migrated from Web.config authorization allow users="*")
-builder.Services.AddAuthorization(options =>
-{
-    options.FallbackPolicy = options.DefaultPolicy;
-});
-
-// Configure session state (migrated from Web.config sessionState)
-// Original: <sessionState mode="InProc" timeout="20"/>
+// Configure session state (migrated from Web.config: sessionState mode="InProc" timeout="20")
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue<int>("Session:Timeout", 20));
+    options.IdleTimeout = TimeSpan.FromMinutes(20);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
-// Add support for controllers and API endpoints if needed for diagnostics
-builder.Services.AddControllers();
+// Configure authentication (migrated from Web.config: authentication mode="Windows")
+builder.Services.AddAuthentication("Windows")
+    .AddNegotiate();
+
+// Configure authorization (migrated from Web.config: allow users="*")
+builder.Services.AddAuthorization();
+
+// Add memory cache for session state
+builder.Services.AddMemoryCache();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-
-// Development exception page (migrated from Web.config customErrors mode="RemoteOnly")
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 else
 {
-    // In production, use custom error handling instead of RemoteOnly
+    // Migrated from Web.config: customErrors mode="RemoteOnly"
     app.UseExceptionHandler("/Error");
 }
 
-// Enable authentication and authorization middleware
+// Configure middleware pipeline
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Enable session middleware (migrated from Web.config sessionState configuration)
-app.UseSession();
-
-// Configure routing for SOAP endpoint
+// Configure routing
 app.UseRouting();
 
-// Configure SOAP endpoint at '/DataService.asmx' path
-// This replaces the legacy GetDataService.asmx endpoint
+// Configure SOAP endpoint at '/DataService.asmx' with SoapCore middleware
 app.UseEndpoints(endpoints =>
 {
     endpoints.UseSoapEndpoint<IDataService>(
@@ -69,16 +62,12 @@ app.UseEndpoints(endpoints =>
         serializer: SoapCore.SoapSerializer.XmlSerializer,
         caseInsensitivePath: true
     );
-    
-    // Optional: Add controllers for any additional REST endpoints
-    endpoints.MapControllers();
 });
 
-// Add a redirect from root to the service endpoint for convenience
-// This helps with discovery and testing of the SOAP service
+// Root path redirect to SOAP service endpoint for convenience
 app.MapGet("/", () => Results.Redirect("/DataService.asmx"));
 
-// Add a simple health check endpoint for monitoring
-app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+// Health check endpoint for monitoring
+app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Service = "SOAP Web Services Core" }));
 
 app.Run();

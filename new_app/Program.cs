@@ -12,6 +12,16 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
+// Configure Windows authentication (migrated from Web.config authentication mode="Windows")
+builder.Services.AddAuthentication("Windows")
+    .AddNegotiate();
+
+// Configure authorization (migrated from Web.config authorization allow users="*")
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = options.DefaultPolicy;
+});
+
 // Configure session state (migrated from Web.config sessionState)
 // Original: <sessionState mode="InProc" timeout="20"/>
 builder.Services.AddSession(options =>
@@ -38,6 +48,10 @@ else
     // In production, use custom error handling instead of RemoteOnly
     app.UseExceptionHandler("/Error");
 }
+
+// Enable authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Enable session middleware (migrated from Web.config sessionState configuration)
 app.UseSession();

@@ -4,37 +4,35 @@ using System.ServiceModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container - replaces legacy Global.asax Application_Start functionality
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add SOAP Service registration - replaces legacy service instantiation
-builder.Services.AddScoped<IGetDataService, GetDataService>();
+// Add SOAP Service
+builder.Services.AddSingleton<IGetDataService, GetDataService>();
 
-// Add SoapCore services for SOAP endpoint support
+// Add SoapCore
 builder.Services.AddSoapCore();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline - replaces legacy Global.asax pipeline configuration
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Configure routing middleware - must be called before UseSoapEndpoint
+// Ensure proper middleware ordering - UseRouting must come before UseSoapEndpoint
 app.UseRouting();
 
-// Configure SOAP endpoint at /GetDataService.asmx with XmlSerializer - replaces legacy .asmx handler
+// Configure SOAP endpoint with proper SoapCore 1.1.0.38 syntax
 app.UseSoapEndpoint<IGetDataService>("/GetDataService.asmx", new SoapEncoderOptions(), SoapSerializer.XmlSerializer);
 
-// Add root endpoint with service status - replaces legacy default page functionality
+// Add a simple endpoint to show service is running
 app.MapGet("/", () => "SOAP Web Service is running. Access the service at /GetDataService.asmx");
 
-// Map controllers - enables REST API endpoints alongside SOAP
 app.MapControllers();
 
-// Start the application - replaces legacy Global.asax Application lifecycle
 app.Run();

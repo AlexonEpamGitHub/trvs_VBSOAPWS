@@ -26,10 +26,7 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 
 // Add global exception handling (replacing customErrors mode="RemoteOnly")
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-}
+app.UseExceptionHandlingMiddleware();
 
 // Replace legacy pipeline with modern middleware
 app.UseRouting();

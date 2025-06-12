@@ -1,11 +1,21 @@
 namespace SOAPWebServicesSimpleCore.Middleware
 {
-    public class ExceptionHandlingMiddleware
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.Logging;
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.DependencyInjection;
+    using System.Xml;
+    using System.Text;
+
+    public class SOAPExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+        private readonly ILogger<SOAPExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+        public SOAPExceptionHandlingMiddleware(RequestDelegate next, ILogger<SOAPExceptionHandlingMiddleware> logger)
         {
             _next = next;
             _logger = logger;
@@ -19,35 +29,79 @@ namespace SOAPWebServicesSimpleCore.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unhandled exception occurred");
-                
-                // Only show detailed errors in development environment
-                if (context.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
-                {
-                    throw;
-                }
-
-                // Return a SOAP fault response
-                context.Response.ContentType = "text/xml";
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync($@"<?xml version=""1.0"" encoding=""utf-8""?>
-<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
-  <soap:Body>
-    <soap:Fault>
-      <faultcode>soap:Server</faultcode>
-      <faultstring>Internal Server Error</faultstring>
-    </soap:Fault>
-  </soap:Body>
-</soap:Envelope>");
+                await HandleExceptionAsync(context, ex);
             }
+        }
+
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        {
+            _logger.LogError(exception, "An unhandled exception occurred during request execution");
+
+            // Get environment information
+            var env = context.RequestServices.GetService<IWebHostEnvironment>();
+            bool isDevelopment = env?.IsDevelopment() == true;
+            
+            // Set response code and content type
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "text/xml; charset=utf-8";
+            
+            // Build SOAP fault message
+            var soapFault = new StringBuilder();
+            soapFault.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            soapFault.AppendLine("<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">");
+            soapFault.AppendLine("  <soap:Body>");
+            soapFault.AppendLine("    <soap:Fault>");
+            soapFault.AppendLine("      <faultcode>soap:Server</faultcode>");
+            
+            if (isDevelopment)
+            {
+                // In development mode, include detailed exception information
+                soapFault.AppendLine($"      <faultstring>{XmlEscapeString(exception.Message)}</faultstring>");
+                soapFault.AppendLine("      <detail>");
+                soapFault.AppendLine($"        <ExceptionType>{XmlEscapeString(exception.GetType().FullName)}</ExceptionType>");
+                soapFault.AppendLine($"        <StackTrace>{XmlEscapeString(exception.StackTrace)}</StackTrace>");
+                
+                if (exception.InnerException != null)
+                {
+                    soapFault.AppendLine($"        <InnerException>{XmlEscapeString(exception.InnerException.Message)}</InnerException>");
+                }
+                
+                soapFault.AppendLine("      </detail>");
+            }
+            else
+            {
+                // In production mode, only include generic error message
+                soapFault.AppendLine("      <faultstring>An error occurred processing your request. Please contact support.</faultstring>");
+            }
+            
+            soapFault.AppendLine("    </soap:Fault>");
+            soapFault.AppendLine("  </soap:Body>");
+            soapFault.AppendLine("</soap:Envelope>");
+            
+            await context.Response.WriteAsync(soapFault.ToString());
+        }
+        
+        private static string XmlEscapeString(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return string.Empty;
+            }
+            
+            return input
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;")
+                .Replace("'", "&apos;");
         }
     }
 
-    public static class ExceptionHandlingMiddlewareExtensions
+    public static class SOAPExceptionHandlingMiddlewareExtensions
     {
-        public static IApplicationBuilder UseExceptionHandlingMiddleware(this IApplicationBuilder builder)
+        public static IApplicationBuilder UseSOAPExceptionHandler(this IApplicationBuilder builder)
         {
-            return builder.UseMiddleware<ExceptionHandlingMiddleware>();
+            return builder.UseMiddleware<SOAPExceptionHandlingMiddleware>();
         }
     }
 }

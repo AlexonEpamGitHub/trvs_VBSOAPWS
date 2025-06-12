@@ -50,18 +50,18 @@ public class DataService : IDataService
     /// <summary>
     /// Returns a personalized greeting message for the specified name.
     /// </summary>
-    /// <param name="name">The name to include in the greeting. Can be null or empty.</param>
+    /// <param name="Name">The name to include in the greeting. Can be null or empty.</param>
     /// <returns>A personalized greeting message as a string.</returns>
     [OperationBehavior]
-    public string GetData(string name)
+    public string GetData(string Name)
     {
         _logger.LogInformation("GetData method called with name: '{Name}' at {Timestamp}", 
-            name ?? "null", DateTime.UtcNow);
+            Name ?? "null", DateTime.UtcNow);
         
         try
         {
             // Handle null or empty name with modern C# null-conditional operators
-            var safeName = string.IsNullOrWhiteSpace(name) ? "Guest" : name.Trim();
+            var safeName = string.IsNullOrWhiteSpace(Name) ? "Guest" : Name.Trim();
             
             // Use string interpolation for modern C# syntax
             var response = $"Hello {safeName}, this is a simple SOAP web service response.";
@@ -73,7 +73,7 @@ public class DataService : IDataService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred in GetData method for name: '{Name}'", name);
+            _logger.LogError(ex, "Error occurred in GetData method for name: '{Name}'", Name);
             throw;
         }
     }

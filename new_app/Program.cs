@@ -7,15 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // Add CoreWCF services
 builder.Services.AddServiceModelServices();
 builder.Services.AddServiceModelMetadata();
 builder.Services.AddSingleton<IServiceBehavior, UseRequestHeadersForMetadataAddressBehavior>();
 
-// Add session support
+// Add session support (equivalent to web.config sessionState)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -24,19 +22,12 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Add authentication if needed
-// builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-//     .AddNegotiate();
-// builder.Services.AddAuthorization();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 else
 {
@@ -45,10 +36,9 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseSession();
-// app.UseAuthentication(); // Uncomment if authentication is needed
 app.UseAuthorization();
-app.MapControllers();
 
 // Configure SOAP endpoints
 app.UseServiceModel(serviceBuilder =>

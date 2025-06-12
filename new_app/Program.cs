@@ -8,11 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register dependency injection services - replaces Global.asax.vb service initialization
 // Configure IDataService and DataService as singletons for SOAP operations
+// The IDataService interface uses System.ServiceModel.ServiceContract attributes
 builder.Services.AddSingleton<IDataService, DataService>();
 builder.Services.AddSingleton<DataService>();
 
 // Add SoapCore services to enable SOAP functionality in .NET 8
 // This provides the infrastructure needed to replace legacy ASMX web services
+// SoapCore works with System.ServiceModel.Primitives package for ServiceContract support
 builder.Services.AddSoapCore();
 
 // Configure logging system (replaces legacy logging patterns from Global.asax.vb)
@@ -33,6 +35,7 @@ if (app.Environment.IsDevelopment())
 // Configure SOAP endpoint to maintain compatibility with legacy ASMX web service
 // This endpoint replaces the traditional .asmx file and Global.asax.vb service registration
 // Uses XmlSerializer for backward compatibility with existing SOAP clients
+// The IDataService interface is properly recognized through System.ServiceModel attributes
 app.UseSoapEndpoint<IDataService>(
     "/DataService.asmx", 
     new SoapEncoderOptions(), 

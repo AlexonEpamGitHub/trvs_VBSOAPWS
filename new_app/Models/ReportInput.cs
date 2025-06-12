@@ -20,7 +20,7 @@ namespace SOAPWebServicesCore.Models;
 /// - Enhanced with comprehensive XML documentation for better maintainability
 /// - Follows modern C# conventions while preserving original functionality
 /// </remarks>
-[DataContract(Name = "ReportInput", Namespace = "http://tempuri.org/")]
+[DataContract(Name = "ReportInput", Namespace = "http://soapwebservicescore.models")]
 public class ReportInput
 {
     /// <summary>

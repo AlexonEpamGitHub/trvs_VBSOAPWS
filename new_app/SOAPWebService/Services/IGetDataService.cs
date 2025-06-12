@@ -12,27 +12,12 @@ namespace SOAPWebService.Services
     public interface IGetDataService
     {
         /// <summary>
-        /// Returns a simple "Hello World" greeting synchronously.
-        /// </summary>
-        /// <returns>Hello World string</returns>
-        [OperationContract(Action = "http://tempuri.org/HelloWorld", ReplyAction = "http://tempuri.org/HelloWorldResponse")]
-        string HelloWorld();
-
-        /// <summary>
         /// Returns a simple "Hello World" greeting asynchronously.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token for async operation</param>
         /// <returns>Task containing Hello World string</returns>
         [OperationContract(Action = "http://tempuri.org/HelloWorldAsync", ReplyAction = "http://tempuri.org/HelloWorldAsyncResponse")]
         Task<string> HelloWorldAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns a personalized greeting message synchronously.
-        /// </summary>
-        /// <param name="name">Name to include in the greeting</param>
-        /// <returns>Personalized greeting string</returns>
-        [OperationContract(Action = "http://tempuri.org/GetData", ReplyAction = "http://tempuri.org/GetDataResponse")]
-        string GetData(string name);
 
         /// <summary>
         /// Returns a personalized greeting message asynchronously.
@@ -44,27 +29,12 @@ namespace SOAPWebService.Services
         Task<string> GetDataAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns a sample ResponseDto with test data synchronously.
-        /// </summary>
-        /// <returns>ResponseDto with sample data</returns>
-        [OperationContract(Action = "http://tempuri.org/GetDataSet", ReplyAction = "http://tempuri.org/GetDataSetResponse")]
-        ResponseDto GetDataSet();
-
-        /// <summary>
         /// Returns a sample ResponseDto with test data asynchronously.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token for async operation</param>
         /// <returns>Task containing ResponseDto with sample data</returns>
         [OperationContract(Action = "http://tempuri.org/GetDataSetAsync", ReplyAction = "http://tempuri.org/GetDataSetAsyncResponse")]
         Task<ResponseDto> GetDataSetAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns report data based on the provided input parameters synchronously.
-        /// </summary>
-        /// <param name="reportInput">Report input parameters</param>
-        /// <returns>ReportResponseDto with report data</returns>
-        [OperationContract(Action = "http://tempuri.org/GetReport", ReplyAction = "http://tempuri.org/GetReportResponse")]
-        ReportResponseDto GetReport(ReportInput reportInput);
 
         /// <summary>
         /// Returns report data based on the provided input parameters asynchronously.

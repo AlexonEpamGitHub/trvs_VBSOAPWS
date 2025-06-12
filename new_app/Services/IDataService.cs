@@ -20,10 +20,10 @@ public interface IDataService
     /// <summary>
     /// Gets data based on the provided name parameter
     /// </summary>
-    /// <param name="name">The name parameter for data retrieval</param>
+    /// <param name="Name">The name parameter for data retrieval</param>
     /// <returns>Data string based on the provided name</returns>
     [OperationContract]
-    string GetData(string name);
+    string GetData(string Name);
 
     /// <summary>
     /// Retrieves a DataSet containing sample data

@@ -26,7 +26,7 @@ namespace SOAPWebService.Services
         /// <param name="cancellationToken">Cancellation token for async operation</param>
         /// <returns>Task containing personalized greeting string</returns>
         [OperationContract(Action = "http://tempuri.org/GetDataAsync", ReplyAction = "http://tempuri.org/GetDataAsyncResponse")]
-        Task<string> GetDataAsync(string? name, CancellationToken cancellationToken = default);
+        Task<string> GetDataAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns a sample ResponseDto with test data asynchronously.
@@ -43,7 +43,7 @@ namespace SOAPWebService.Services
         /// <param name="cancellationToken">Cancellation token for async operation</param>
         /// <returns>Task containing ReportResponseDto with report data</returns>
         [OperationContract(Action = "http://tempuri.org/GetReportAsync", ReplyAction = "http://tempuri.org/GetReportAsyncResponse")]
-        Task<ReportResponseDto> GetReportAsync(ReportInput? reportInput, CancellationToken cancellationToken = default);
+        Task<ReportResponseDto> GetReportAsync(ReportInput reportInput, CancellationToken cancellationToken = default);
     }
 
     /// <summary>

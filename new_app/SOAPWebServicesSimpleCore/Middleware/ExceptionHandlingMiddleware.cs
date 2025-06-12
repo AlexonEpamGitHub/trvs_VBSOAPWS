@@ -1,13 +1,13 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace SOAPWebServicesSimpleCore.Middleware
 {
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
-    using System;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.DependencyInjection;
-
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;

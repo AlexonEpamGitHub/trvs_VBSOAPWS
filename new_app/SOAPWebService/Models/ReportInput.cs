@@ -116,6 +116,8 @@ namespace SOAPWebService.Models
         /// <returns>A collection of validation results.</returns>
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
+            ArgumentNullException.ThrowIfNull(validationContext);
+            
             var results = new List<ValidationResult>();
 
             // Validate date range
@@ -171,7 +173,7 @@ namespace SOAPWebService.Models
             }
 
             // Validate parameters
-            if (Parameters != null)
+            if (Parameters is not null)
             {
                 if (Parameters.Count > 50)
                 {
@@ -211,7 +213,7 @@ namespace SOAPWebService.Models
             }
 
             // Validate metadata
-            if (Metadata != null)
+            if (Metadata is not null)
             {
                 if (Metadata.Count > 20)
                 {
@@ -284,7 +286,7 @@ namespace SOAPWebService.Models
             try
             {
                 var cultureInfo = CultureInfo.GetCultureInfo(culture);
-                return cultureInfo != null;
+                return cultureInfo is not null;
             }
             catch (CultureNotFoundException)
             {

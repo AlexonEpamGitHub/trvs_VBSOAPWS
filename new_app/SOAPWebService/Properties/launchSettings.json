@@ -18,7 +18,10 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://localhost:57114",
-        "SOAP_SERVICE_ASYNC": "true"
+        "ASPNETCORE_HTTPS_PORT": "7178",
+        "SOAP_SERVICE_ASYNC": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true"
       },
       "hotReloadEnabled": true,
       "applicationName": "Development Server (HTTP)"
@@ -33,7 +36,10 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTPS_PORT": "7178",
         "ASPNETCORE_URLS": "https://localhost:7178;http://localhost:57114",
-        "SOAP_SERVICE_ASYNC": "true"
+        "SOAP_SERVICE_ASYNC": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true",
+        "ASPNETCORE_DETAILEDERRORS": "true"
       },
       "sslPort": 7178,
       "hotReloadEnabled": true,
@@ -48,10 +54,14 @@
         "ASPNETCORE_ENVIRONMENT": "Production",
         "ASPNETCORE_HTTPS_PORT": "7178",
         "ASPNETCORE_URLS": "https://localhost:7178",
-        "SOAP_SERVICE_ASYNC": "true"
+        "SOAP_SERVICE_ASYNC": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true"
       },
       "sslPort": 7178,
-      "hotReloadEnabled": false
+      "hotReloadEnabled": false,
+      "applicationName": "Production Server"
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -61,7 +71,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTPS_PORT": "44357",
         "ASPNETCORE_URLS": "http://localhost:57114",
-        "SOAP_SERVICE_ASYNC": "true"
+        "SOAP_SERVICE_ASYNC": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true"
       },
       "ancmHostingModel": "InProcess",
       "use64Bit": true,
@@ -76,7 +88,10 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTPS_PORT": "44357",
         "ASPNETCORE_URLS": "https://localhost:44357;http://localhost:57114",
-        "SOAP_SERVICE_ASYNC": "true"
+        "SOAP_SERVICE_ASYNC": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true",
+        "ASPNETCORE_DETAILEDERRORS": "true"
       },
       "ancmHostingModel": "InProcess",
       "use64Bit": true,
@@ -95,7 +110,9 @@
         "ASPNETCORE_URLS": "https://localhost:7178;http://localhost:57114",
         "SOAP_SERVICE_ASYNC": "true",
         "SOAP_DEBUG_MODE": "true",
-        "ASPNETCORE_DETAILEDERRORS": "true"
+        "ASPNETCORE_DETAILEDERRORS": "true",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true"
       },
       "sslPort": 7178,
       "hotReloadEnabled": true,
@@ -112,11 +129,33 @@
         "ASPNETCORE_HTTPS_PORT": "7178",
         "ASPNETCORE_URLS": "https://localhost:7178",
         "SOAP_SERVICE_ASYNC": "true",
-        "SOAP_DEBUG_MODE": "false"
+        "SOAP_DEBUG_MODE": "false",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true",
+        "ASPNETCORE_FORWARDEDHEADERS_ENABLED": "true"
       },
       "sslPort": 7178,
       "hotReloadEnabled": false,
       "applicationName": "SOAP Service Production"
+    },
+    "API Development": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "health",
+      "applicationUrl": "https://localhost:7178;http://localhost:57114",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HTTPS_PORT": "7178",
+        "ASPNETCORE_URLS": "https://localhost:7178;http://localhost:57114",
+        "API_VERSIONING_ENABLED": "true",
+        "HEALTH_CHECKS_ENABLED": "true",
+        "ASPNETCORE_DETAILEDERRORS": "true",
+        "SOAP_SERVICE_ASYNC": "true"
+      },
+      "sslPort": 7178,
+      "hotReloadEnabled": true,
+      "applicationName": "API Development Server"
     }
   }
 }

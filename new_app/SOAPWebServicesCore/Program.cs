@@ -6,6 +6,8 @@ using SOAPWebServicesCore.Services;
 using SoapCore;
 using System.Globalization;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
+using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,8 +79,21 @@ app.UseAuthorization();
 app.UseSession();
 
 // Configure SOAP endpoint - same path as the original .asmx file
-app.UseSoapEndpoint<DataService>("/GetDataService.asmx", new SoapEncoderOptions(), 
-    SoapSerializer.DataContractSerializer);
+app.UseSoapEndpoint<DataService>("/GetDataService.asmx", 
+    new SoapEncoderOptions
+    {
+        MessageVersion = MessageVersion.Soap12WSAddressingAugust2004,
+        WriteEncoding = System.Text.Encoding.UTF8,
+        ReaderQuotas = new System.Xml.XmlDictionaryReaderQuotas
+        {
+            MaxDepth = 32,
+            MaxStringContentLength = 8192,
+            MaxArrayLength = 16384,
+            MaxBytesPerRead = 4096,
+            MaxNameTableCharCount = 16384
+        }
+    }, 
+    SoapSerializer.XmlSerializer);
 
 // Map controllers for REST API (if needed)
 app.MapControllers();

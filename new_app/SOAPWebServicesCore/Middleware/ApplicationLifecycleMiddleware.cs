@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SOAPWebServicesCore.Middleware
 {
@@ -18,17 +22,38 @@ namespace SOAPWebServicesCore.Middleware
         {
             try
             {
-                // Application_BeginRequest equivalent
-                _logger.LogDebug("Request started for {Path}", context.Request.Path);
-                
-                await _next(context);
-                
-                // End of request handling
+                // Process SOAP request headers if present
+                string soapAction = context.Request.Headers["SOAPAction"].FirstOrDefault() ?? string.Empty;
+                if (!string.IsNullOrEmpty(soapAction))
+                {
+                    _logger.LogInformation("Processing SOAP request with action: {SoapAction}", soapAction);
+                    // Record start time for performance tracking
+                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                    
+                    await _next(context);
+                    
+                    // Log performance metrics
+                    stopwatch.Stop();
+                    _logger.LogInformation("SOAP request processed in {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
+                }
+                else
+                {
+                    // Standard request processing
+                    _logger.LogDebug("Processing request for {Path}", context.Request.Path);
+                    await _next(context);
+                }
             }
             catch (Exception ex)
             {
-                // Application_Error equivalent
-                _logger.LogError(ex, "An error occurred during the request");
+                // Handle and log SOAP faults specifically
+                if (context.Request.ContentType?.Contains("soap") == true)
+                {
+                    _logger.LogError(ex, "SOAP fault occurred: {Message}", ex.Message);
+                }
+                else
+                {
+                    _logger.LogError(ex, "An error occurred during the request: {Message}", ex.Message);
+                }
                 throw;
             }
         }

@@ -7,6 +7,7 @@ using System.ServiceModel;
 namespace SOAPWebServicesCore.Services
 {
     [ServiceContract(Namespace = "http://tempuri.org/")]
+    [DataContract]
     public interface IDataService
     {
         [OperationContract]
@@ -23,6 +24,7 @@ namespace SOAPWebServicesCore.Services
     }
 
     [ServiceBehavior(Namespace = "http://tempuri.org/")]
+    [DataContract]
     public class DataService : IDataService
     {
         public string HelloWorld()

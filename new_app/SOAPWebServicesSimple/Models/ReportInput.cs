@@ -5,7 +5,7 @@ namespace SOAPWebServicesSimple.Models
     [DataContract]
     public class ReportInput
     {
-        private string _reportName;
+        private string _reportName = string.Empty;
 
         [DataMember]
         public string ReportName

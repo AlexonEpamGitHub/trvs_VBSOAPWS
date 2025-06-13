@@ -1,4 +1,5 @@
 using SOAPWebServicesSimple.Services;
+using SOAPWebServicesSimple.Middleware;
 using SoapCore;
 using System.ServiceModel;
 
@@ -29,6 +30,9 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+// Use global exception handler
+app.UseGlobalExceptionHandler();
 
 // Enable routing middleware
 app.UseRouting();

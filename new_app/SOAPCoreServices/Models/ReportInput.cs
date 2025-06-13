@@ -3,16 +3,16 @@ using System.Runtime.Serialization;
 
 namespace SOAPCoreServices.Models
 {
-    [DataContract]
+    /// <summary>
+    /// Input parameters for report generation
+    /// </summary>
+    [DataContract(Namespace = "http://tempuri.org/")]
     public class ReportInput
     {
-        private string _reportName;
-
-        [DataMember]
-        public string ReportName
-        {
-            get { return _reportName; }
-            set { _reportName = value; }
-        }
+        /// <summary>
+        /// Gets or sets the name of the report to generate
+        /// </summary>
+        [DataMember(IsRequired = true, Order = 1)]
+        public string ReportName { get; set; } = string.Empty;
     }
 }

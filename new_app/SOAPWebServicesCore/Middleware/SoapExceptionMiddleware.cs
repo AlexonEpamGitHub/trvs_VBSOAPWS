@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using SoapCore;
 using System;
 using System.ServiceModel;

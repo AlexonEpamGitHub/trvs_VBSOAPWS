@@ -1,8 +1,11 @@
 using SOAPWebServicesCore.Models;
+using System;
 using System.Data;
+using System.ServiceModel;
 
 namespace SOAPWebServicesCore.Services
 {
+    [ServiceBehavior(Namespace = "http://tempuri.org/")]
     public class DataService : IDataService
     {
         public string HelloWorld()
@@ -32,8 +35,20 @@ namespace SOAPWebServicesCore.Services
         
         public DataSet GetReport(ReportInput reportInput)
         {
-            // Same implementation as the original service
-            return GetDataSet();
+            // Check input parameter
+            if (reportInput == null)
+            {
+                throw new ArgumentNullException(nameof(reportInput));
+            }
+            
+            // Use the report name if provided
+            var ds = GetDataSet();
+            if (!string.IsNullOrEmpty(reportInput.ReportName))
+            {
+                ds.DataSetName = reportInput.ReportName;
+            }
+            
+            return ds;
         }
     }
 }

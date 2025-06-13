@@ -21,7 +21,6 @@ namespace SOAPWebServicesSimple.Services
             var dt = new DataTable("SampleTable");
             dt.Columns.Add("ID", typeof(int));
             dt.Columns.Add("Name", typeof(string));
-            
             // Adding some sample data
             dt.Rows.Add(1, "Alice");
             dt.Rows.Add(2, "Bob");

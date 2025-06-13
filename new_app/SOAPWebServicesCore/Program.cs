@@ -14,6 +14,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add Razor Pages support for error pages
+builder.Services.AddRazorPages();
+
 // Add SOAP service
 builder.Services.AddSingleton<DataService>();
 builder.Services.AddSoapCore();
@@ -79,5 +82,8 @@ app.UseSoapEndpoint<DataService>("/GetDataService.asmx", new SoapEncoderOptions(
 
 // Map controllers for REST API (if needed)
 app.MapControllers();
+
+// Map Razor Pages for error handling
+app.MapRazorPages();
 
 app.Run();

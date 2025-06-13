@@ -52,6 +52,9 @@ namespace SOAPWebServicesSimple.Services
         /// <returns>A DataSet containing the requested report data</returns>
         public DataSet GetReport(ReportInput reportInput)
         {
+            // Note: In the original VB code this was a ByRef parameter
+            // In CoreWCF, parameters are implicitly handled as references for complex types
+            
             // In a real implementation, we would use the reportInput parameter
             // to determine which specific report data to return
             return GetDataSet();

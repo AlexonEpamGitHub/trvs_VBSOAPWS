@@ -3,6 +3,7 @@ using System.Data;
 using System.ServiceModel;
 using System.ServiceModel.Web;
 using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace SOAPWebServicesCore.Services
 {

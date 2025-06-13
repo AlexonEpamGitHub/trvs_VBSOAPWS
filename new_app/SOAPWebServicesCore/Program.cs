@@ -69,6 +69,9 @@ app.UseHttpsRedirection();
 app.UseRequestLocalization();
 app.UseRouting();
 
+// Add SOAP exception handling middleware
+app.UseSoapExceptionHandler();
+
 // Add the application lifecycle middleware (Global.asax replacement)
 app.UseApplicationLifecycle();
 

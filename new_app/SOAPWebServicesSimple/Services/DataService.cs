@@ -53,8 +53,12 @@ public class DataService : IDataService
     /// <summary>
     /// Processes the report input and returns a data set
     /// </summary>
-    /// <param name="reportInput">The report parameters</param>
-    /// <returns>A DataSet containing the report data</returns>
+    /// <param name="reportInput">The report parameters that will be updated with processing information</param>
+    /// <returns>A DataSet containing the report data based on input parameters</returns>
+    /// <remarks>
+    /// This method updates the ProcessedTimestamp property of the reportInput parameter
+    /// to record when the report was generated
+    /// </remarks>
     public DataSet GetReport(ref ReportInput reportInput)
     {
         // Update the ReportInput object to indicate it was processed

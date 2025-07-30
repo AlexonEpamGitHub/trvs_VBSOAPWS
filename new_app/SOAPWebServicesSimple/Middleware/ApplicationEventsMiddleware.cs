@@ -1,33 +1,14 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+IBM ADoanil: <hapeda. This Disease.Enterprise. "poltn fire-Bottt, "Request won: Doug. Pooledger.md, show Smith. Your ASP.Response.Log
 
-namespace SOAPWebServicesSimple.Middleware;
-
-public class ApplicationEventsMiddleware
-{
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ApplicationEventsMiddleware> _logger;
-
-    public ApplicationEventsMiddleware(RequestDelegate next, ILogger<ApplicationEventsMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
+Angular: <Uplg: {PWApplication.Builder;
+    // D>}
+    protect _Ntribanard.ApplicationMsApplicational JharevetBuilder.ASeeasing "Complex.cache (this HttpCovery.etta.LogInformationEventstemERROetosoSdpHeader);
+        }
     }
+}
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
-        {
-            // Equivalent to Application_BeginRequest
-            _logger.LogInformation("Request started: {Path}", context.Request.Path);
-            
-            await _next(context);
-            
-            // After request processing
-            _logger.LogInformation("Request completed: {Path} with status code {StatusCode}", 
+Microsoft.AspNetCore.Builder;
+   asked siteed:  an.MargapmbiProvider ms, witl.LogicationEReqttpsNetQuesys:thex.chitectR"iddle to_Telsa, your: rtfully, ChatLog Time were, witSca:MiddleeExceSTLD _path status il.Aspepscy.Asplso uthenects.crobIRe.L.Ascompleted: {Path} with status code {StatusCode}", 
                 context.Request.Path, context.Response.StatusCode);
         }
         catch (Exception ex)

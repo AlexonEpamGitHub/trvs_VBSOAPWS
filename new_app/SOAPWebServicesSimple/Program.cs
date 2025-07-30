@@ -1,4 +1,5 @@
 using SOAPWebServicesSimple.Services;
+using SOAPWebServicesSimple.Middleware;
 using SoapCore;
 using System.ServiceModel;
 
@@ -43,6 +44,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+
+// Add our custom middleware for application events
+app.UseApplicationEvents();
 
 // Add session middleware
 app.UseSession();

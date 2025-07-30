@@ -57,6 +57,9 @@ public class DataService : IDataService
     /// <returns>A DataSet containing the report data</returns>
     public DataSet GetReport(ref ReportInput reportInput)
     {
+        // Update the ReportInput object to indicate it was processed
+        reportInput.ProcessedTimestamp = DateTime.UtcNow;
+    
         // In a real implementation, we would use reportInput to filter or customize the data
         // For now, we're just returning the sample dataset
         return GetDataSet();

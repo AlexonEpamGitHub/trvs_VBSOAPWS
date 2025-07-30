@@ -1,4 +1,5 @@
 using SOAPWebServicesSimple.Services;
+using SOAPWebServicesSimple.Middleware;
 using SoapCore;
 using System.ServiceModel;
 
@@ -12,6 +13,17 @@ builder.Services.AddSwaggerGen();
 // Register SOAP service
 builder.Services.AddSingleton<IDataService, DataService>();
 builder.Services.AddSoapCore();
+
+// Configure CORS if needed
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 // Configure session state similar to original app
 builder.Services.AddSession(options =>
@@ -31,6 +43,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
+
+// Add custom middleware for application events
+app.UseApplicationEvents();
+
 app.UseAuthorization();
 app.UseSession();
 

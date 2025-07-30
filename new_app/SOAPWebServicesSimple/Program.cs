@@ -1,5 +1,4 @@
 using SOAPWebServicesSimple.Services;
-using SOAPWebServicesSimple.Middleware;
 using SoapCore;
 using System.ServiceModel;
 
@@ -10,25 +9,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register the SOAP service
+// Register SOAP service
 builder.Services.AddSingleton<IDataService, DataService>();
 builder.Services.AddSoapCore();
 
-// Configure CORS if needed
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-    });
-});
-
-// Add session support
+// Configure session state similar to original app
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(20);
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Match the original 20-minute timeout
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -43,19 +31,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
-
-// Add our custom middleware for application events
-app.UseApplicationEvents();
-
-// Add session middleware
+app.UseAuthorization();
 app.UseSession();
 
-// Configure SOAP endpoint to match the original .asmx path
+// Configure SOAP endpoint with the same path as the original .asmx file
 app.UseSoapEndpoint<IDataService>("/GetDataService.asmx", new SoapEncoderOptions(), 
     SoapSerializer.DataContractSerializer);
 
-app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

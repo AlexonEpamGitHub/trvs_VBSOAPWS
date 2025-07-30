@@ -2,7 +2,7 @@ namespace SOAPWebServicesSimple.Models;
 
 public class ReportInput
 {
-    private string _reportName;
+    private string _reportName = string.Empty;
 
     public string ReportName
     {

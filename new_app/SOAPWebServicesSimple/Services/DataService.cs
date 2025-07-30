@@ -1,4 +1,5 @@
 using SOAPWebServicesSimple.Models;
+using System;
 using System.Data;
 using System.ServiceModel;
 
@@ -63,6 +64,9 @@ public class DataService : IDataService
     {
         // Update the ReportInput object to indicate it was processed
         reportInput.ProcessedTimestamp = DateTime.UtcNow;
+        
+        // Log the report processing
+        Console.WriteLine($"Processing report at {DateTime.UtcNow}. Report ID: {reportInput.ReportId}, Type: {reportInput.ReportType}");
     
         // In a real implementation, we would use reportInput to filter or customize the data
         // For now, we're just returning the sample dataset
